@@ -615,22 +615,6 @@ public:
   }
 
   /**
-   * フィールド情報を保存する
-   */
-  void saveField() {
-    memcpy(g_tempField, g_myField, sizeof(g_myField));
-    memcpy(g_tempPutPackLine, g_myPutPackLine, sizeof(g_myPutPackLine));
-  }
-
-  /**
-   * フィールド情報を元に戻す
-   */
-  void rollbackField() {
-    memcpy(g_myField, g_tempField, sizeof(g_tempField));
-    memcpy(g_myPutPackLine, g_tempPutPackLine, sizeof(g_tempPutPackLine));
-  }
-
-  /**
    * ターン毎の情報を読み込む
    */
   void readTurnInfo() {
