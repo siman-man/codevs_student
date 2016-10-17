@@ -4,6 +4,7 @@
 #include <queue>
 #include <algorithm>
 #include <string.h>
+#include <unordered_map>
 
 using namespace std;
 typedef long long ll;
@@ -177,6 +178,8 @@ public:
     queue<Node> que;
     que.push(root);
 
+    unordered_map<ll, bool> checkNodeList;
+
     for (int depth = 0; depth < SEARCH_DEPTH; depth++) {
       priority_queue<Node, vector<Node>, greater<Node> > pque;
       Pack pack = g_packs[turn + depth];
@@ -222,7 +225,14 @@ public:
             bestCommand = node.command;
           }
 
-          que.push(node);
+          ll hash = node.hashCode();
+
+          if (!checkNodeList[hash]) {
+            checkNodeList[hash] = true;
+            que.push(node);
+          } else {
+            j--;
+          }
         }
       }
     }
