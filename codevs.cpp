@@ -77,6 +77,20 @@ struct Node {
     this->value = 0;
   }
 
+  ll hashCode() {
+    ll hash = 0;
+
+    for (int x = 0; x < FIELD_WIDTH; x++) {
+      for (int y = 0; y < FIELD_HEIGHT; y++) {
+        int num = this->field[x+2][y];
+        if (num == EMPTY) continue;
+        hash ^= g_zoblishField[x][y][num];
+      }
+    }
+
+    return hash;
+  }
+
   bool operator >(const Node &n) const {
     return value < n.value;
   }
