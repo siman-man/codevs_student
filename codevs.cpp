@@ -20,7 +20,7 @@ const int EMPTY = 0; // 空のグリッド
 const int OJAMA = 11; // お邪魔ブロック
 
 int BEAM_WIDTH = 1000;
-int SEARCH_DEPTH = 5;
+int SEARCH_DEPTH = 6;
 
 struct Pack {
   int t[9];
@@ -267,6 +267,20 @@ public:
     if (t2 != EMPTY) { g_myField[x][y] = t2; y++; }
 
     g_myPutPackLine[x] = y;
+  }
+
+  /**
+   * パックにお邪魔を埋め込む
+   */
+  void fillOjama(int turn, int ojamaStock) {
+    Pack *pack = &g_packs[turn];
+
+    for (int i = 0; i < 9 && ojamaStock > 0; i++) {
+      if (pack->t[i] == EMPTY) {
+        pack->t[i] = OJAMA;
+        ojamaStock--;
+      }
+    }
   }
 
   /**
@@ -597,6 +611,10 @@ public:
     // [自分のお邪魔ストック]
     int myOjamaStock;
     cin >> myOjamaStock;
+
+    if (myOjamaStock > 0) {
+      fillOjama(turn, myOjamaStock);
+    }
 
     // [前のターン終了時の自分のフィールド情報]
     int t;
