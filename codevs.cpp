@@ -42,7 +42,7 @@ struct Pack {
   }
 };
 
-int g_myField[WIDTH][HEIGHT]; // 自フィールド
+char g_myField[WIDTH][HEIGHT]; // 自フィールド
 int g_enemyField[WIDTH][HEIGHT]; // 敵フィールド
 int g_tempField[WIDTH][HEIGHT]; // 保存用のフィールド
 
@@ -73,7 +73,7 @@ struct Command {
 struct Node {
   int value;
   Command command;
-  int field[HEIGHT][WIDTH];
+  char field[HEIGHT][WIDTH];
 
   Node () {
     this->value = 0;
