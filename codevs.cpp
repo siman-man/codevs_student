@@ -122,7 +122,7 @@ public:
       }
     }
 
-    g_beforeTime = 300000;
+    g_beforeTime = 180000;
 
     readPackInfo();
   }
@@ -493,8 +493,9 @@ public:
         }
 
         int num = g_myField[x][toY];
+        if (num == EMPTY) break;
 
-        if (num == EMPTY || num == OJAMA) {
+        if (num == OJAMA) {
           sum = 0;
           fromY = toY;
         } else {
