@@ -16,7 +16,7 @@ const int WIDTH = 2 + FIELD_WIDTH + 2; // 余分な領域も含めたフィー�
 const int HEIGHT = FIELD_HEIGHT + 3; // 余分な領域も含めたフィールドの縦幅
 const int DANGER_LINE = 16; // 危険ライン
 
-const int DELETED_SUM = 10; // 消滅のために作るべき和の値
+const char DELETED_SUM = 10; // 消滅のために作るべき和の値
 
 const char EMPTY = 0; // 空のグリッド
 const char OJAMA = 11; // お邪魔ブロック
@@ -436,7 +436,7 @@ public:
   void deleteCheckHorizontal(int y) {
     int fromX = 2;
     int toX = 2;
-    int sum = g_myField[toX][y];
+    char sum = g_myField[toX][y];
 
     while (toX < WIDTH-2) {
       if (sum < DELETED_SUM) {
@@ -448,13 +448,13 @@ public:
           fromX = toX;
         }
 
-        int num = g_myField[toX][y];
+        char num = g_myField[toX][y];
 
         if (num == EMPTY || num == OJAMA) {
           sum = 0;
           fromX = toX;
         } else {
-          sum += g_myField[toX][y];
+          sum += num;
         }
       } else {
         assert(g_myField[fromX][y] != EMPTY);
@@ -482,7 +482,7 @@ public:
   void deleteCheckVertical(int x) {
     int fromY = 0;
     int toY = 0;
-    int sum = g_myField[x][toY];
+    char sum = g_myField[x][toY];
 
     while (toY < HEIGHT) {
       if (sum < DELETED_SUM) {
@@ -493,14 +493,14 @@ public:
           fromY = toY;
         }
 
-        int num = g_myField[x][toY];
+        char num = g_myField[x][toY];
         if (num == EMPTY) break;
 
         if (num == OJAMA) {
           sum = 0;
           fromY = toY;
         } else {
-          sum += g_myField[x][toY];
+          sum += num;
         }
       } else {
         sum -= g_myField[x][fromY];
@@ -530,7 +530,7 @@ public:
     int fromX = sx;
     int toY = sy;
     int toX = sx;
-    int sum = g_myField[toX][toY];
+    char sum = g_myField[toX][toY];
 
     while (toX < WIDTH-2 && toY < g_maxHeight) {
       assert(fromX <= toX);
@@ -546,7 +546,7 @@ public:
           fromX = toX;
         }
 
-        int num = g_myField[toX][toY];
+        char num = g_myField[toX][toY];
 
         if (num == EMPTY || num == OJAMA) {
           sum = 0;
@@ -588,7 +588,7 @@ public:
     int fromX = sx;
     int toY = sy;
     int toX = sx;
-    int sum = g_myField[toX][toY];
+    char sum = g_myField[toX][toY];
 
     while (toX < WIDTH && toY >= 0) {
       if (sum < DELETED_SUM) {
