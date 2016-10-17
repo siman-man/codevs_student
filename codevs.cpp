@@ -358,6 +358,8 @@ public:
     int chainCnt = 0;
     int value = 0;
 
+    updatePutPackLine();
+
     while (true) {
       int deleteCount = chainPack();
 
@@ -392,8 +394,10 @@ public:
   int chainPack() {
     memset(g_packDeleteCount, 0, sizeof(g_packDeleteCount));
 
-    for (int y = 0; y < HEIGHT; y++) {
+    for (int y = 0; y < g_maxHeight; y++) {
       deleteCheckHorizontal(y);
+    }
+    for (int y = 0; y < HEIGHT; y++) {
       deleteCheckDiagonalRightUp(y, 2);
       deleteCheckDiagonalRightDown(y, 2);
     }
