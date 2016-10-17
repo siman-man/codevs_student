@@ -44,11 +44,9 @@ struct Pack {
 
 char g_myField[WIDTH][HEIGHT]; // 自フィールド
 int g_enemyField[WIDTH][HEIGHT]; // 敵フィールド
-int g_tempField[WIDTH][HEIGHT]; // 保存用のフィールド
 
 int g_myPutPackLine[WIDTH]; // 次にブロックを設置する高さを保持する配列
 int g_enemyPutPackLine[WIDTH]; // 次にブロックを設置する高さを保持する配列
-int g_tempPutPackLine[WIDTH]; // 保存用の配列
 
 int g_packDeleteCount[HEIGHT][WIDTH];
 
