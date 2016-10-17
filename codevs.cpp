@@ -368,7 +368,7 @@ public:
 
       if (depth > 0) {
         value += 20 * chainCnt * (deleteCount / 2);
-      } else if (chainCnt > 10) {
+      } else if (chainCnt >= 10) {
         value += 100 * chainCnt * (deleteCount / 2);
       }
 
