@@ -316,6 +316,8 @@ public:
 
   /**
    * パックにお邪魔を埋め込む
+   *
+   * TODO: 複数ターンにまたがるお邪魔についても対応を考える
    */
   void fillOjama(int turn, int ojamaStock) {
     Pack *pack = &g_packs[turn];
@@ -352,7 +354,6 @@ public:
   int simulate(int depth) {
     int chainCnt = 0;
     int value = 0;
-
     updatePutPackLine();
 
     while (true) {
@@ -643,7 +644,7 @@ public:
     int myRemainTime;
     cin >> myRemainTime;
 
-    fprintf(stderr,"myRemainTime = %d, use time = %d\n", myRemainTime, g_beforeTime - myRemainTime);
+    fprintf(stderr,"%d: myRemainTime = %d, use time = %d\n", turn, myRemainTime, g_beforeTime - myRemainTime);
     g_beforeTime = myRemainTime;
 
     // [自分のお邪魔ストック]
