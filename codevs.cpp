@@ -18,8 +18,8 @@ const int DANGER_LINE = 16; // 危険ライン
 
 const int DELETED_SUM = 10; // 消滅のために作るべき和の値
 
-const int EMPTY = 0; // 空のグリッド
-const int OJAMA = 11; // お邪魔ブロック
+const char EMPTY = 0; // 空のグリッド
+const char OJAMA = 11; // お邪魔ブロック
 
 int BEAM_WIDTH = 1200;
 int SEARCH_DEPTH = 6;
