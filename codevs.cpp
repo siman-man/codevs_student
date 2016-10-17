@@ -54,6 +54,7 @@ int g_packDeleteCount[HEIGHT][WIDTH];
 
 int g_maxHeight;
 int g_minHeight;
+int g_beforeTime;
 
 ll g_zoblishField[FIELD_WIDTH][FIELD_HEIGHT][12]; // zoblish hash生成用の乱数テーブル
 
@@ -120,6 +121,8 @@ public:
         }
       }
     }
+
+    g_beforeTime = 300000;
 
     readPackInfo();
   }
@@ -628,7 +631,6 @@ public:
    * ターン毎の情報を読み込む
    */
   void readTurnInfo() {
-    fprintf(stderr,"readTurnInfo =>\n");
     string _end_;
 
     // [現在のターン数]
@@ -638,6 +640,9 @@ public:
     // [自分の残り思考時間。単位はミリ秒]
     int myRemainTime;
     cin >> myRemainTime;
+
+    fprintf(stderr,"myRemainTime = %d, use time = %d\n", myRemainTime, g_beforeTime - myRemainTime);
+    g_beforeTime = myRemainTime;
 
     // [自分のお邪魔ストック]
     int myOjamaStock;
