@@ -28,9 +28,11 @@ struct Pack {
 
 char g_myField[WIDTH][HEIGHT]; // 自フィールド
 char g_enemyField[WIDTH][HEIGHT]; // 敵フィールド
+char g_tempField[WIDTH][HEIGHT]; // 保存用のフィールド
 
 int g_myPutPackLine[WIDTH]; // 次にブロックを設置する高さを保持する配列
 int g_enemyPutPackLine[WIDTH]; // 次にブロックを設置する高さを保持する配列
+int g_tempPutPackLine[WIDTH]; // 保存用の配列
 
 int g_packDeleteCount[HEIGHT][WIDTH];
 
@@ -316,6 +318,22 @@ public:
         i++;
       }
     }
+  }
+
+  /**
+   * フィールド情報を保存する
+   */
+  void saveField() {
+    memcpy(g_tempField, g_myField, sizeof(g_myField));
+    memcpy(g_tempPutPackLine, g_myPutPackLine, sizeof(g_myPutPackLine));
+  }
+
+  /**
+   * フィールド情報を元に戻す
+   */
+  void rollbackField() {
+    memcpy(g_myField, g_tempField, sizeof(g_tempField));
+    memcpy(g_myPutPackLine, g_tempPutPackLine, sizeof(g_tempPutPackLine));
   }
 
   /**
