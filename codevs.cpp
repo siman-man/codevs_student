@@ -185,9 +185,6 @@ public:
       priority_queue<Node, vector<Node>, greater<Node> > pque;
       Pack pack = g_packs[turn + depth];
 
-      int qsize = que.size();
-      //fprintf(stderr,"que size = %d\n", qsize);
-
       while (!que.empty()) {
         Node node = que.front(); que.pop();
         memcpy(g_myField, node.field, sizeof(node.field));
