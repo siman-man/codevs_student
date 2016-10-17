@@ -16,25 +16,32 @@ const int DANGER_LINE = 16; // 危険ライン
 
 const int DELETED_SUM = 10; // 消滅のために作るべき和の値
 
-const char EMPTY = 0; // 空のグリッド
-const char OJAMA = 11; // お邪魔ブロック
+const int EMPTY = 0; // 空のグリッド
+const int OJAMA = 11; // お邪魔ブロック
 
-int BEAM_WIDTH = 100;
-int SEARCH_DEPTH = 10;
+int BEAM_WIDTH = 1000;
+int SEARCH_DEPTH = 5;
 
 struct Pack {
-  char t[9];
+  int t[9];
+
+  Pack () {
+    memset(t, -1, sizeof(t));
+  }
 };
 
-char g_myField[WIDTH][HEIGHT]; // 自フィールド
-char g_enemyField[WIDTH][HEIGHT]; // 敵フィールド
-char g_tempField[WIDTH][HEIGHT]; // 保存用のフィールド
+int g_myField[WIDTH][HEIGHT]; // 自フィールド
+int g_enemyField[WIDTH][HEIGHT]; // 敵フィールド
+int g_tempField[WIDTH][HEIGHT]; // 保存用のフィールド
 
 int g_myPutPackLine[WIDTH]; // 次にブロックを設置する高さを保持する配列
 int g_enemyPutPackLine[WIDTH]; // 次にブロックを設置する高さを保持する配列
 int g_tempPutPackLine[WIDTH]; // 保存用の配列
 
 int g_packDeleteCount[HEIGHT][WIDTH];
+
+int g_maxHeight;
+int g_minHeight;
 
 Pack g_packs[MAX_TURN]; // パック一覧
 
@@ -49,8 +56,9 @@ struct Command {
 };
 
 struct Node {
-  char field[HEIGHT][WIDTH];
   int value;
+  Command command;
+  int field[HEIGHT][WIDTH];
 
   Node () {
     this->value = 0;
@@ -83,7 +91,7 @@ public:
    */
   void readPackInfo() {
     fprintf(stderr,"readPackInfo =>\n");
-    char t0, t1, t2, t3, t4, t5, t6, t7, t8;
+    int t0, t1, t2, t3, t4, t5, t6, t7, t8;
     string _end_;
 
     for (int i = 0; i < MAX_TURN; i++) {
@@ -111,15 +119,76 @@ public:
     readTurnInfo();
     updatePutPackLine();
 
-    Command cmd = getBestCommand();
-    cout << cmd.pos << " " << cmd.rot << endl;
+    //showField();
+    //assert(turn < 1);
+
+    Command command = getBestCommand(turn);
+    cout << command.pos-2 << " " << command.rot << endl;
   }
 
   /**
    * 一番良い操作を取得する
+   *
+   * @param [int] turn 今現在のターン
    */
-  Command getBestCommand() {
+  Command getBestCommand(int turn) {
+    Node root;
+    memcpy(root.field, g_myField, sizeof(g_myField));
     Command bestCommand;
+    int maxValue = -9999;
+
+    queue<Node> que;
+    que.push(root);
+
+    for (int depth = 0; depth < SEARCH_DEPTH; depth++) {
+      priority_queue<Node, vector<Node>, greater<Node> > pque;
+      Pack pack = g_packs[turn + depth];
+
+      int qsize = que.size();
+      //fprintf(stderr,"que size = %d\n", qsize);
+
+      while (!que.empty()) {
+        Node node = que.front(); que.pop();
+        memcpy(g_myField, node.field, sizeof(node.field));
+        updatePutPackLine();
+
+        for (int x = 0; x < WIDTH-2; x++) {
+          for (int rot = 0; rot < 4; rot++) {
+            putPack(x, rot, pack);
+
+            if (isValidField()) {
+              Node cand;
+              cand.value = simulate(depth);
+
+              if (depth == 0) {
+                cand.command = Command(x, rot);
+              } else {
+                cand.command = node.command;
+              }
+
+              memcpy(cand.field, g_myField, sizeof(g_myField));
+              pque.push(cand);
+            }
+
+            memcpy(g_myField, node.field, sizeof(node.field));
+            updatePutPackLine();
+          }
+        }
+      }
+
+      if (depth < SEARCH_DEPTH) {
+        for (int j = 0; j < BEAM_WIDTH && !pque.empty(); j++) {
+          Node node = pque.top(); pque.pop();
+
+          if (maxValue < node.value) {
+            maxValue = node.value;
+            bestCommand = node.command;
+          }
+
+          que.push(node);
+        }
+      }
+    }
 
     return bestCommand;
   }
@@ -128,10 +197,10 @@ public:
    * パックの落下処理
    */
   void fallPack() {
-    for (int x = 0; x < WIDTH; x++) {
+    for (int x = 2; x < WIDTH-2; x++) {
       int fallCnt = 0;
 
-      for (int y = 1; y < HEIGHT; y++) {
+      for (int y = 0; y < HEIGHT; y++) {
         if (g_myField[x][y] == EMPTY) {
           fallCnt++;
         } else if (fallCnt > 0) {
@@ -152,24 +221,24 @@ public:
   void putPack(int x, int rot, const Pack &pack) {
     switch (rot) {
       case 0:
-        putLinePack(  x, pack.t[0], pack.t[3], pack.t[6]);
-        putLinePack(x+1, pack.t[1], pack.t[4], pack.t[7]);
-        putLinePack(x+2, pack.t[2], pack.t[5], pack.t[8]);
+        putLinePack(  x, pack.t[6], pack.t[3], pack.t[0]);
+        putLinePack(x+1, pack.t[7], pack.t[4], pack.t[1]);
+        putLinePack(x+2, pack.t[8], pack.t[5], pack.t[2]);
         break;
       case 1:
-        putLinePack(  x, pack.t[6], pack.t[7], pack.t[8]);
-        putLinePack(x+1, pack.t[3], pack.t[4], pack.t[5]);
-        putLinePack(x+2, pack.t[0], pack.t[1], pack.t[2]);
+        putLinePack(  x, pack.t[8], pack.t[7], pack.t[6]);
+        putLinePack(x+1, pack.t[5], pack.t[4], pack.t[3]);
+        putLinePack(x+2, pack.t[2], pack.t[1], pack.t[0]);
         break;
       case 2:
-        putLinePack(  x, pack.t[8], pack.t[5], pack.t[2]);
-        putLinePack(x+1, pack.t[7], pack.t[4], pack.t[1]);
-        putLinePack(x+2, pack.t[6], pack.t[3], pack.t[0]);
+        putLinePack(  x, pack.t[2], pack.t[5], pack.t[8]);
+        putLinePack(x+1, pack.t[1], pack.t[4], pack.t[7]);
+        putLinePack(x+2, pack.t[0], pack.t[3], pack.t[6]);
         break;
       case 3:
-        putLinePack(  x, pack.t[2], pack.t[1], pack.t[0]);
-        putLinePack(x+1, pack.t[5], pack.t[4], pack.t[3]);
-        putLinePack(x+2, pack.t[8], pack.t[7], pack.t[6]);
+        putLinePack(  x, pack.t[0], pack.t[1], pack.t[2]);
+        putLinePack(x+1, pack.t[3], pack.t[4], pack.t[5]);
+        putLinePack(x+2, pack.t[6], pack.t[7], pack.t[8]);
         break;
       default:
         assert(false);
@@ -179,23 +248,76 @@ public:
   /**
    * 指定したx座標にパックの一部を落とす (下のような感じで落とす)
    *
-   *    t0
-   *    t1
-   *    t2
+   *    t0 t1 t2
    *
    * @param [int] x x座標
-   * @param [char] t0 パックのブロックの値
-   * @param [char] t1 パックのブロックの値
-   * @param [char] t2 パックのブロックの値
+   * @param [int] t0 パックのブロックの値
+   * @param [int] t1 パックのブロックの値
+   * @param [int] t2 パックのブロックの値
    */
-  void putLinePack(int x, char t0, char t1, char t2) {
+  void putLinePack(int x, int t0, int t1, int t2) {
     int y = g_myPutPackLine[x];
 
-    if (t2 != EMPTY) { g_myField[x][y] = t2; y++; }
-    if (t1 != EMPTY) { g_myField[x][y] = t1; y++; }
+    assert(t0 >= 0);
+    assert(t1 >= 0);
+    assert(t2 >= 0);
+
     if (t0 != EMPTY) { g_myField[x][y] = t0; y++; }
+    if (t1 != EMPTY) { g_myField[x][y] = t1; y++; }
+    if (t2 != EMPTY) { g_myField[x][y] = t2; y++; }
 
     g_myPutPackLine[x] = y;
+  }
+
+  /**
+   * 有効なフィールドかどうかを調べる
+   */
+  bool isValidField() {
+    if (g_myPutPackLine[0] > 0) return false;
+    if (g_myPutPackLine[1] > 0) return false;
+    if (g_myPutPackLine[12] > 0) return false;
+    if (g_myPutPackLine[13] > 0) return false;
+
+    for (int x = 2; x < WIDTH-2; x++) {
+      if (g_myPutPackLine[x] >= DANGER_LINE) return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * 連鎖処理のシミュレーションを行う
+   *
+   * @param [int] 評価値
+   */
+  int simulate(int depth) {
+    int chainCnt = 0;
+    int value = 0;
+
+    while (true) {
+      int deleteCount = chainPack();
+
+      if (deleteCount > 0) {
+        fallPack();
+        chainCnt++;
+      }
+
+      if (depth > 0) {
+        value += 20 * chainCnt * (deleteCount / 2);
+      } else if (chainCnt > 10) {
+        value += 100 * chainCnt * (deleteCount / 2);
+      }
+
+      if (depth == 0) {
+        value -= 3 * deleteCount;
+      }
+
+      if (deleteCount == 0) break;
+    }
+
+    value -= (g_maxHeight - g_minHeight);
+
+    return value;
   }
 
   /**
@@ -208,12 +330,16 @@ public:
 
     for (int y = 0; y < HEIGHT; y++) {
       deleteCheckHorizontal(y);
+      deleteCheckDiagonalRightUp(y, 2);
+      deleteCheckDiagonalRightDown(y, 2);
     }
-    for (int x = 0; x < WIDTH; x++) {
+    for (int x = 2; x < WIDTH-2; x++) {
       deleteCheckVertical(x);
+      deleteCheckDiagonalRightUp(0, x);
+      deleteCheckDiagonalRightDown(HEIGHT-1, x);
     }
 
-    int deleteCnt = calcDeletePack();
+    int deleteCnt = deletePack();
     return deleteCnt;
   }
 
@@ -222,12 +348,18 @@ public:
    *
    * @return [int] 削除カウント
    */
-  int calcDeletePack() {
+  int deletePack() {
     int deleteCnt = 0;
+    int cnt = 0;
 
-    for (int y = 0; y < HEIGHT; y++) {
-      for (int x = 0; x < WIDTH; x++) {
-        deleteCnt += g_packDeleteCount[y][x];
+    for (int x = 2; x < WIDTH-2; x++) {
+      for (int y = 0; y < HEIGHT; y++) {
+        cnt = g_packDeleteCount[x][y];
+
+        if (cnt > 0) {
+          g_myField[x][y] = EMPTY;
+          deleteCnt += cnt;
+        }
       }
     }
 
@@ -240,26 +372,38 @@ public:
    * @param [int] y チェックするy座標
    */
   void deleteCheckHorizontal(int y) {
-    int from = 0;
-    int to = 0;
-    char sum = g_myField[to][y];
+    int fromX = 2;
+    int toX = 2;
+    int sum = g_myField[toX][y];
 
-    while (to < WIDTH) {
+    while (toX < WIDTH-2) {
       if (sum < DELETED_SUM) {
-        if (to < WIDTH-1) break;
+        toX++;
+        if (sum == 0) {
+          fromX = toX;
+        }
 
-        to++;
-        if (sum == 0) from = to;
+        int num = g_myField[toX][y];
 
-        sum += g_myField[to][y];
+        if (num == EMPTY || num == OJAMA) {
+          sum = 0;
+          fromX = toX;
+        } else {
+          sum += g_myField[toX][y];
+        }
       } else {
-        sum -= g_myField[from][y];
-        from++;
+        assert(g_myField[fromX][y] != EMPTY);
+        sum -= g_myField[fromX][y];
+        fromX++;
+
+        if (fromX > toX) {
+          toX = fromX;
+        }
       }
 
       if (sum == DELETED_SUM) {
-        for (int x = from; x <= to; x++) {
-          g_packDeleteCount[y][x]++;
+        for (int x = fromX; x <= toX; x++) {
+          g_packDeleteCount[x][y]++;
         }
       }
     }
@@ -271,26 +415,39 @@ public:
    * @param [int] x チェックするx座標
    */
   void deleteCheckVertical(int x) {
-    int from = 0;
-    int to = 0;
-    char sum = g_myField[x][to];
+    int fromY = 0;
+    int toY = 0;
+    int sum = g_myField[x][toY];
 
-    while (to < HEIGHT) {
+    while (toY < HEIGHT) {
       if (sum < DELETED_SUM) {
-        if (to < HEIGHT-1) break;
+        if (toY >= HEIGHT-1) break;
 
-        to++;
-        if (sum == 0) from = to;
+        toY++;
+        if (sum == 0) {
+          fromY = toY;
+        }
 
-        sum += g_myField[x][to];
+        int num = g_myField[x][toY];
+
+        if (num == EMPTY || num == OJAMA) {
+          sum = 0;
+          fromY = toY;
+        } else {
+          sum += g_myField[x][toY];
+        }
       } else {
-        sum -= g_myField[x][from];
-        from++;
+        sum -= g_myField[x][fromY];
+        fromY++;
+
+        if (fromY > toY) {
+          toY = fromY;
+        }
       }
 
       if (sum == DELETED_SUM) {
-        for (int y = from; y <= to; y++) {
-          g_packDeleteCount[y][x]++;
+        for (int y = fromY; y <= toY; y++) {
+          g_packDeleteCount[x][y]++;
         }
       }
     }
@@ -299,17 +456,75 @@ public:
   /**
    * 斜めのラインの削除判定を行う (右上に進む)
    *
-   * @param [int] y チェックするy座標
+   * @param [int] sy チェックするy座標
+   * @param [int] sx チェックするx座標
    */
-  void deleteCheckDiagonalRightUp(int y) {
-    int fromY = y;
-    int fromX = 0;
-    int toY = y;
-    int toX = 0;
-    char sum = g_myField[toX][toY];
+  void deleteCheckDiagonalRightUp(int sy, int sx) {
+    int fromY = sy;
+    int fromX = sx;
+    int toY = sy;
+    int toX = sx;
+    int sum = g_myField[toX][toY];
 
-    while (toX < WIDTH) {
+    while (toX < WIDTH-2 && toY < HEIGHT) {
+      assert(fromX <= toX);
+
       if (sum < DELETED_SUM) {
+        toY++;
+        toX++;
+
+        if (sum == 0) {
+          fromY = toY;
+          fromX = toX;
+        }
+
+        int num = g_myField[toX][toY];
+
+        if (num == EMPTY || num == OJAMA) {
+          sum = 0;
+          fromY = toY;
+          fromX = toX;
+        } else {
+          sum += num;
+        }
+      } else {
+        assert(g_myField[fromX][fromY] != EMPTY);
+        sum -= g_myField[fromX][fromY];
+        fromY++;
+        fromX++;
+
+        if (fromX > toX) {
+          toX = fromX;
+          toY = fromY;
+        }
+      }
+
+      if (sum == DELETED_SUM) {
+        int i = 0;
+        for (int x = fromX; x <= toX; x++) {
+          g_packDeleteCount[x][fromY+i]++;
+          i++;
+        }
+      }
+    }
+  }
+
+  /**
+   * 連鎖判定
+   *
+   * @param [int] sy チェックするy座標
+   * @param [int] sx チェックするx座標
+   */
+  void deleteCheckDiagonalRightDown(int sy, int sx) {
+    int fromY = sy;
+    int fromX = sx;
+    int toY = sy;
+    int toX = sx;
+    int sum = g_myField[toX][toY];
+
+    while (toX < WIDTH && toY < HEIGHT) {
+      if (sum < DELETED_SUM) {
+        if (toX >= WIDTH-1) break;
         toY--;
         toX++;
 
@@ -318,19 +533,32 @@ public:
           fromX = toX;
         }
 
-        sum += g_myField[toX][toY];
+        int num = g_myField[toX][toY];
+
+        if (num == EMPTY || num == OJAMA) {
+          sum = 0;
+          fromY = toY;
+          fromX = toX;
+        } else {
+          sum += num;
+        }
       } else {
         sum -= g_myField[fromX][fromY];
         fromY--;
         fromX++;
-      }
-    }
 
-    if (sum == DELETED_SUM) {
-      int i = 0;
-      for (int x = fromX; x <= toX; x++) {
-        g_packDeleteCount[fromY-i][x]++;
-        i++;
+        if (fromX > toX) {
+          toY = fromY;
+          toX = fromX;
+        }
+      }
+
+      if (sum == DELETED_SUM) {
+        int i = 0;
+        for (int x = fromX; x <= toX; x++) {
+          g_packDeleteCount[x][fromY-i]++;
+          i++;
+        }
       }
     }
   }
@@ -355,6 +583,7 @@ public:
    * ターン毎の情報を読み込む
    */
   void readTurnInfo() {
+    fprintf(stderr,"readTurnInfo =>\n");
     string _end_;
 
     // [現在のターン数]
@@ -372,9 +601,9 @@ public:
     // [前のターン終了時の自分のフィールド情報]
     int t;
     for (int y = 0; y < FIELD_HEIGHT; y++) {
-      for (int x = 0; x < FIELD_WIDTH; x++) {
+      for (int x = 2; x < WIDTH-2; x++) {
         cin >> t;
-        g_myField[x][FIELD_HEIGHT-y-1] = (char)t;
+        g_myField[x][FIELD_HEIGHT-y-1] = t;
       }
     }
 
@@ -386,9 +615,9 @@ public:
 
     // [前のターン終了時の相手のフィールド情報]
     for (int y = 0; y < FIELD_HEIGHT; y++) {
-      for (int x = 0; x < FIELD_WIDTH; x++) {
+      for (int x = 2; x < WIDTH-2; x++) {
         cin >> t;
-        g_enemyField[x][FIELD_HEIGHT-y-1] = (char)t;
+        g_enemyField[x][FIELD_HEIGHT-y-1] = t;
       }
     }
 
@@ -399,6 +628,9 @@ public:
    * ブロックを落下させる時に落下させる位置を更新する
    */
   void updatePutPackLine() {
+    g_maxHeight = 0;
+    g_minHeight = HEIGHT;
+
     for (int x = 0; x < WIDTH; x++) {
       setPutPackLine(x);
     }
@@ -408,13 +640,33 @@ public:
    * @param [int] x x座標の値
    */
   void setPutPackLine(int x) {
-    int y = 1;
+    int y = 0;
 
     while (g_myField[x][y] != EMPTY && y < DANGER_LINE) {
       y++;
     }
 
     g_myPutPackLine[x] = y;
+    g_maxHeight = max(g_maxHeight, y);
+    g_minHeight = min(g_minHeight, y);
+  }
+
+  /**
+   * フィールドを表示する(デバッグ用)
+   */
+  void showField() {
+    fprintf(stderr,"\n");
+    for (int x = 0; x < WIDTH; x++) {
+      for (int y = 0; y < HEIGHT; y++) {
+        if (g_myField[x][y] == 11) {
+          fprintf(stderr,"B");
+        } else {
+          fprintf(stderr,"%d", g_myField[x][y]);
+        }
+      }
+      fprintf(stderr," %d\n", g_myPutPackLine[x]);
+    }
+    fprintf(stderr,"\n");
   }
 };
 
@@ -426,7 +678,6 @@ int main() {
   cv.init();
 
   for (int i = 0; i < MAX_TURN; i++) {
-    fprintf(stderr,"turn %d =>\n", i);
     cv.run(i);
   }
 
