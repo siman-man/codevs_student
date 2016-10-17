@@ -6,6 +6,7 @@
 #include <string.h>
 
 using namespace std;
+typedef long long ll;
 
 const int MAX_TURN = 500; // ゲームの最大ターン数
 const int FIELD_WIDTH = 10; // フィールドの横幅
@@ -21,6 +22,16 @@ const int OJAMA = 11; // お邪魔ブロック
 
 int BEAM_WIDTH = 1000;
 int SEARCH_DEPTH = 6;
+
+/**
+ * 乱数生成器
+ */
+unsigned long long xor128(){
+  static unsigned long long rx=123456789, ry=362436069, rz=521288629, rw=88675123;
+  unsigned long long rt = (rx ^ (rx<<11));
+  rx=ry; ry=rz; rz=rw;
+  return (rw=(rw^(rw>>19))^(rt^(rt>>8)));
+}
 
 struct Pack {
   int t[9];
@@ -42,6 +53,8 @@ int g_packDeleteCount[HEIGHT][WIDTH];
 
 int g_maxHeight;
 int g_minHeight;
+
+ll g_zoblishField[FIELD_WIDTH][FIELD_HEIGHT][12]; // zoblish hash生成用の乱数テーブル
 
 Pack g_packs[MAX_TURN]; // パック一覧
 
@@ -72,8 +85,10 @@ struct Node {
 class Codevs {
 public:
   /**
-   * ゲーム開始時の入力情報を読み込む
-   * フィールド情報を初期化しておく
+   * 1. ゲーム開始時の入力情報を読み込む
+   * 2. フィールド情報を初期化しておく
+   * 3. zoblish hash用の乱数テーブル生成
+   * 4. パック情報の読み込み
    */
   void init() {
     fprintf(stderr,"init =>\n");
@@ -82,6 +97,14 @@ public:
 
     memset(g_myField, EMPTY, sizeof(g_myField));
     memset(g_enemyField, EMPTY, sizeof(g_enemyField));
+
+    for (int x = 0; x < FIELD_WIDTH; x++) {
+      for (int y = 0; y < FIELD_HEIGHT; y++) {
+        for (int i = 0; i < 12; i++) {
+          g_zoblishField[x][y][i] = xor128();
+        }
+      }
+    }
 
     readPackInfo();
   }
