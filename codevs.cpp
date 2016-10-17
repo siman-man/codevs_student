@@ -701,7 +701,7 @@ public:
   void setPutPackLine(int x) {
     int y = 0;
 
-    while (g_myField[x][y] != EMPTY && y < DANGER_LINE) {
+    while (g_myField[x][y] != EMPTY && y < HEIGHT-1) {
       y++;
     }
 
