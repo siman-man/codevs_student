@@ -374,10 +374,6 @@ public:
         value += 100 * chainCnt * (deleteCount / 2);
       }
 
-      if (depth == 0) {
-        value -= 3 * deleteCount;
-      }
-
       if (deleteCount == 0) break;
     }
 
@@ -447,6 +443,9 @@ public:
     while (toX < WIDTH-2) {
       if (sum < DELETED_SUM) {
         toX++;
+
+        if (toX >= WIDTH-2) break;
+
         if (sum == 0) {
           fromX = toX;
         }
@@ -489,9 +488,9 @@ public:
 
     while (toY < HEIGHT) {
       if (sum < DELETED_SUM) {
-        if (toY >= HEIGHT-1) break;
-
         toY++;
+        if (toY >= HEIGHT) break;
+
         if (sum == 0) {
           fromY = toY;
         }
@@ -542,6 +541,8 @@ public:
         toY++;
         toX++;
 
+        if (toX >= WIDTH-2 || toY >= HEIGHT) break;
+
         if (sum == 0) {
           fromY = toY;
           fromX = toX;
@@ -591,11 +592,12 @@ public:
     int toX = sx;
     int sum = g_myField[toX][toY];
 
-    while (toX < WIDTH && toY < HEIGHT) {
+    while (toX < WIDTH && toY >= 0) {
       if (sum < DELETED_SUM) {
-        if (toX >= WIDTH-1) break;
         toY--;
         toX++;
+
+        if (toX >= WIDTH-2 || toY < 0) break;
 
         if (sum == 0) {
           fromY = toY;
