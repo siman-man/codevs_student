@@ -26,8 +26,8 @@ struct Pack {
   char t[9];
 };
 
-char g_myField[HEIGHT][WIDTH]; // 自フィールド
-char g_enemyField[HEIGHT][WIDTH]; // 敵フィールド
+char g_myField[WIDTH][HEIGHT]; // 自フィールド
+char g_enemyField[WIDTH][HEIGHT]; // 敵フィールド
 
 int g_myPutPackLine[WIDTH]; // 次にブロックを設置する高さを保持する配列
 int g_enemyPutPackLine[WIDTH]; // 次にブロックを設置する高さを保持する配列
@@ -35,6 +35,11 @@ int g_enemyPutPackLine[WIDTH]; // 次にブロックを設置する高さを保�
 int g_packDeleteCount[HEIGHT][WIDTH];
 
 Pack g_packs[MAX_TURN]; // パック一覧
+
+struct Command {
+  int pos;
+  int rot;
+};
 
 struct Node {
   char field[HEIGHT][WIDTH];
@@ -56,8 +61,9 @@ public:
    * フィールド情報を初期化しておく
    */
   void init() {
+    fprintf(stderr,"init =>\n");
     int _w, _h, _t, _s, _n;
-    scanf("%d %d %d %d %d", &_w, &_h, &_t, &_s, &_n);
+    cin >> _w >> _h >> _t >> _s >> _n;
 
     memset(g_myField, EMPTY, sizeof(g_myField));
     memset(g_enemyField, EMPTY, sizeof(g_enemyField));
@@ -69,14 +75,15 @@ public:
    * パック情報を読み込む
    */
   void readPackInfo() {
+    fprintf(stderr,"readPackInfo =>\n");
     char t0, t1, t2, t3, t4, t5, t6, t7, t8;
     string _end_;
 
     for (int i = 0; i < MAX_TURN; i++) {
       Pack pack;
-      scanf("%c %c %c", &t0, &t1, &t2);
-      scanf("%c %c %c", &t3, &t4, &t5);
-      scanf("%c %c %c", &t6, &t7, &t8);
+      cin >> t0 >> t1 >> t2;
+      cin >> t3 >> t4 >> t5;
+      cin >> t6 >> t7 >> t8;
 
       pack.t[0] = t0; pack.t[1] = t1; pack.t[2] = t2;
       pack.t[3] = t3; pack.t[4] = t4; pack.t[5] = t5;
@@ -96,6 +103,8 @@ public:
   void run(int turn) {
     readTurnInfo();
     updatePutPackLine();
+
+    cout << "0 0" << endl;
   }
 
   /**
@@ -106,11 +115,11 @@ public:
       int fallCnt = 0;
 
       for (int y = 1; y < HEIGHT; y++) {
-        if (g_myField[y][x] == EMPTY) {
+        if (g_myField[x][y] == EMPTY) {
           fallCnt++;
         } else if (fallCnt > 0) {
-          g_myField[y-fallCnt][x] = g_myField[y][x];
-          g_myField[y][x] = EMPTY;
+          g_myField[x][y-fallCnt] = g_myField[x][y];
+          g_myField[x][y] = EMPTY;
         }
       }
     }
@@ -165,9 +174,9 @@ public:
   void putLinePack(int x, char t0, char t1, char t2) {
     int y = g_myPutPackLine[x];
 
-    if (t2 != EMPTY) { g_myField[y][x] = t2; y++; }
-    if (t1 != EMPTY) { g_myField[y][x] = t1; y++; }
-    if (t0 != EMPTY) { g_myField[y][x] = t0; y++; }
+    if (t2 != EMPTY) { g_myField[x][y] = t2; y++; }
+    if (t1 != EMPTY) { g_myField[x][y] = t1; y++; }
+    if (t0 != EMPTY) { g_myField[x][y] = t0; y++; }
 
     g_myPutPackLine[x] = y;
   }
@@ -216,7 +225,7 @@ public:
   void deleteCheckHorizontal(int y) {
     int from = 0;
     int to = 0;
-    char sum = g_myField[y][to];
+    char sum = g_myField[to][y];
 
     while (to < WIDTH) {
       if (sum < DELETED_SUM) {
@@ -225,9 +234,9 @@ public:
         to++;
         if (sum == 0) from = to;
 
-        sum += g_myField[y][to];
+        sum += g_myField[to][y];
       } else {
-        sum -= g_myField[y][from];
+        sum -= g_myField[from][y];
         from++;
       }
 
@@ -247,7 +256,7 @@ public:
   void deleteCheckVertical(int x) {
     int from = 0;
     int to = 0;
-    char sum = g_myField[to][x];
+    char sum = g_myField[x][to];
 
     while (to < HEIGHT) {
       if (sum < DELETED_SUM) {
@@ -256,9 +265,9 @@ public:
         to++;
         if (sum == 0) from = to;
 
-        sum += g_myField[to][x];
+        sum += g_myField[x][to];
       } else {
-        sum -= g_myField[from][x];
+        sum -= g_myField[x][from];
         from++;
       }
 
@@ -280,7 +289,7 @@ public:
     int fromX = 0;
     int toY = y;
     int toX = 0;
-    char sum = g_myField[toY][toX];
+    char sum = g_myField[toX][toY];
 
     while (toX < WIDTH) {
       if (sum < DELETED_SUM) {
@@ -292,9 +301,9 @@ public:
           fromX = toX;
         }
 
-        sum += g_myField[toY][toX];
+        sum += g_myField[toX][toY];
       } else {
-        sum -= g_myField[fromY][fromX];
+        sum -= g_myField[fromX][fromY];
         fromY--;
         fromX++;
       }
@@ -313,38 +322,44 @@ public:
    * ターン毎の情報を読み込む
    */
   void readTurnInfo() {
+    string _end_;
+
     // [現在のターン数]
     int turn;
-    scanf("%d", &turn);
+    cin >> turn;
 
     // [自分の残り思考時間。単位はミリ秒]
     int myRemainTime;
-    scanf("%d", &myRemainTime);
+    cin >> myRemainTime;
 
     // [自分のお邪魔ストック]
     int myOjamaStock;
-    scanf("%d", &myOjamaStock);
+    cin >> myOjamaStock;
 
     // [前のターン終了時の自分のフィールド情報]
     int t;
     for (int y = 0; y < FIELD_HEIGHT; y++) {
       for (int x = 0; x < FIELD_WIDTH; x++) {
-        scanf("%d", &t);
-        g_myField[y][x] = (char)t;
+        cin >> t;
+        g_myField[x][FIELD_HEIGHT-y-1] = (char)t;
       }
     }
 
+    cin >> _end_;
+
     // [相手のお邪魔ストック]
     int enemyOjamaStock;
-    scanf("%d", &enemyOjamaStock);
+    cin >> enemyOjamaStock;
 
     // [前のターン終了時の相手のフィールド情報]
     for (int y = 0; y < FIELD_HEIGHT; y++) {
       for (int x = 0; x < FIELD_WIDTH; x++) {
-        scanf("%d", &t);
-        g_enemyField[y][x] = (char)t;
+        cin >> t;
+        g_enemyField[x][FIELD_HEIGHT-y-1] = (char)t;
       }
     }
+
+    cin >> _end_;
   }
 
   /**
@@ -362,7 +377,7 @@ public:
   void setPutPackLine(int x) {
     int y = 1;
 
-    while (g_myField[y][x] != EMPTY && y < DANGER_LINE) {
+    while (g_myField[x][y] != EMPTY && y < DANGER_LINE) {
       y++;
     }
 
@@ -373,9 +388,12 @@ public:
 int main() {
   Codevs cv;
 
+  cout << "siman" << endl;
+
   cv.init();
 
   for (int i = 0; i < MAX_TURN; i++) {
+    fprintf(stderr,"turn %d =>\n", i);
     cv.run(i);
   }
 
