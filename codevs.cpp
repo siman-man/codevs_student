@@ -41,6 +41,11 @@ Pack g_packs[MAX_TURN]; // パック一覧
 struct Command {
   int pos;
   int rot;
+
+  Command (int pos = 0, int rot = 0) {
+    this->pos = pos;
+    this->rot = rot;
+  }
 };
 
 struct Node {
@@ -106,7 +111,17 @@ public:
     readTurnInfo();
     updatePutPackLine();
 
-    cout << "0 0" << endl;
+    Command cmd = getBestCommand();
+    cout << cmd.pos << " " << cmd.rot << endl;
+  }
+
+  /**
+   * 一番良い操作を取得する
+   */
+  Command getBestCommand() {
+    Command bestCommand;
+
+    return bestCommand;
   }
 
   /**
