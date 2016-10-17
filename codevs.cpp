@@ -535,7 +535,7 @@ public:
     int toX = sx;
     int sum = g_myField[toX][toY];
 
-    while (toX < WIDTH-2 && toY < HEIGHT) {
+    while (toX < WIDTH-2 && toY < g_maxHeight) {
       assert(fromX <= toX);
 
       if (sum < DELETED_SUM) {
