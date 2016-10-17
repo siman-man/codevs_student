@@ -21,7 +21,7 @@ const int DELETED_SUM = 10; // 消滅のために作るべき和の値
 const int EMPTY = 0; // 空のグリッド
 const int OJAMA = 11; // お邪魔ブロック
 
-int BEAM_WIDTH = 1000;
+int BEAM_WIDTH = 1200;
 int SEARCH_DEPTH = 6;
 
 /**
