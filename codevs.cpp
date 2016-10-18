@@ -163,9 +163,6 @@ public:
       fillOjama(turn, g_myOjamaStock);
     }
 
-    //showField();
-    //assert(turn < 1);
-
     Command command = getBestCommand(turn);
     cout << command.pos-2 << " " << command.rot << endl;
     fflush(stderr);
