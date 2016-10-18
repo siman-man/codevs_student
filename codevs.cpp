@@ -21,7 +21,7 @@ const char DELETED_SUM = 10; // 消滅のために作るべき和の値
 const char EMPTY = 0; // 空のグリッド
 const char OJAMA = 11; // お邪魔ブロック
 
-int BEAM_WIDTH = 1200;
+int BEAM_WIDTH = 1500;
 int SEARCH_DEPTH = 6;
 
 /**
@@ -392,15 +392,13 @@ public:
       }
 
       if (depth > 0) {
-        value += 20 * chainCnt * (deleteCount / 2);
-      } else if (chainCnt >= 10) {
-        value += 100 * chainCnt * (deleteCount / 2);
+        value += floor(pow(1.4, chainCnt) * (deleteCount/2));
+      } else if (chainCnt >= 12) {
+        value += 3 * floor(pow(1.4, chainCnt) * (deleteCount/2));
       }
 
       if (deleteCount == 0) break;
     }
-
-    value -= (g_maxHeight - g_minHeight);
 
     return value;
   }
