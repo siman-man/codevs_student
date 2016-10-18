@@ -53,6 +53,7 @@ int g_packDeleteCount[WIDTH][HEIGHT];
 int g_maxHeight;
 int g_minHeight;
 int g_beforeTime;
+int g_myOjamaStock;
 
 ll g_zoblishField[FIELD_WIDTH][FIELD_HEIGHT][12]; // zoblish hash生成用の乱数テーブル
 
@@ -158,12 +159,20 @@ public:
     readTurnInfo();
     updatePutPackLine();
 
+    if (g_myOjamaStock > 0) {
+      fillOjama(turn, g_myOjamaStock);
+    }
+
     //showField();
     //assert(turn < 1);
 
     Command command = getBestCommand(turn);
     cout << command.pos-2 << " " << command.rot << endl;
     fflush(stderr);
+
+    if (g_myOjamaStock > 0) {
+      cleanOjama(turn);
+    }
   }
 
   /**
@@ -321,12 +330,29 @@ public:
    * TODO: 複数ターンにまたがるお邪魔についても対応を考える
    */
   void fillOjama(int turn, int ojamaStock) {
-    Pack *pack = &g_packs[turn];
+    for (int t = turn; t <= min(MAX_TURN-1, (turn + SEARCH_DEPTH)) && ojamaStock > 0; t++) {
+      Pack *pack = &g_packs[t];
 
-    for (int i = 0; i < 9 && ojamaStock > 0; i++) {
-      if (pack->t[i] == EMPTY) {
-        pack->t[i] = OJAMA;
-        ojamaStock--;
+      for (int i = 0; i < 9 && ojamaStock > 0; i++) {
+        if (pack->t[i] == EMPTY) {
+          pack->t[i] = OJAMA;
+          ojamaStock--;
+        }
+      }
+    }
+  }
+
+  /**
+   * ブロックからお邪魔を取り除く
+   */
+  void cleanOjama(int turn) {
+    for (int t = turn; t <= min(MAX_TURN-1, (turn + SEARCH_DEPTH)); t++) {
+      Pack *pack = &g_packs[t];
+
+      for (int i = 0; i < 9; i++) {
+        if (pack->t[i] == OJAMA) {
+          pack->t[i] = EMPTY;
+        }
       }
     }
   }
@@ -649,12 +675,8 @@ public:
     g_beforeTime = myRemainTime;
 
     // [自分のお邪魔ストック]
-    int myOjamaStock;
-    cin >> myOjamaStock;
+    cin >> g_myOjamaStock;
 
-    if (myOjamaStock > 0) {
-      fillOjama(turn, myOjamaStock);
-    }
 
     // [前のターン終了時の自分のフィールド情報]
     int t;
