@@ -48,7 +48,7 @@ int g_enemyField[WIDTH][HEIGHT]; // 敵フィールド
 int g_myPutPackLine[WIDTH]; // 次にブロックを設置する高さを保持する配列
 int g_enemyPutPackLine[WIDTH]; // 次にブロックを設置する高さを保持する配列
 
-int g_packDeleteCount[HEIGHT][WIDTH];
+int g_packDeleteCount[WIDTH][HEIGHT];
 
 int g_maxHeight;
 int g_minHeight;
@@ -71,7 +71,7 @@ struct Command {
 struct Node {
   int value;
   Command command;
-  char field[HEIGHT][WIDTH];
+  char field[WIDTH][HEIGHT];
 
   Node () {
     this->value = 0;
@@ -163,6 +163,7 @@ public:
 
     Command command = getBestCommand(turn);
     cout << command.pos-2 << " " << command.rot << endl;
+    fflush(stderr);
   }
 
   /**
