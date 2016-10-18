@@ -414,7 +414,7 @@ public:
     int cnt = 0;
 
     for (int x = 2; x < WIDTH-2; x++) {
-      for (int y = 0; y < HEIGHT; y++) {
+      for (int y = 0; y < g_maxHeight; y++) {
         cnt = g_packDeleteCount[x][y];
 
         if (cnt > 0) {
