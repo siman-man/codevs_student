@@ -23,7 +23,7 @@ const char OJAMA = 11; // お邪魔ブロック
 
 const int WIN = 99999;
 
-int BEAM_WIDTH = 1000;
+int BEAM_WIDTH = 1500;
 int SEARCH_DEPTH = 8;
 
 /**
@@ -53,7 +53,6 @@ int g_enemyPutPackLine[WIDTH]; // 次にブロックを設置する高さを保�
 int g_packDeleteCount[WIDTH][HEIGHT];
 
 int g_maxHeight;
-int g_minHeight;
 int g_beforeTime;
 int g_myOjamaStock;
 
@@ -424,17 +423,17 @@ public:
   int chainPack() {
     memset(g_packDeleteCount, 0, sizeof(g_packDeleteCount));
 
-    for (int y = 0; y < g_maxHeight; y++) {
+    for (int y = 0; y <= g_maxHeight; y++) {
       deleteCheckHorizontal(y);
     }
-    for (int y = 0; y < HEIGHT; y++) {
+    for (int y = 0; y <= g_maxHeight; y++) {
       deleteCheckDiagonalRightUp(y, 2);
       deleteCheckDiagonalRightDown(y, 2);
     }
     for (int x = 2; x < WIDTH-2; x++) {
       deleteCheckVertical(x);
       deleteCheckDiagonalRightUp(0, x);
-      deleteCheckDiagonalRightDown(HEIGHT-1, x);
+      deleteCheckDiagonalRightDown(g_maxHeight, x);
     }
 
     int deleteCnt = deletePack();
@@ -451,7 +450,7 @@ public:
     int cnt = 0;
 
     for (int x = 2; x < WIDTH-2; x++) {
-      for (int y = 0; y < g_maxHeight; y++) {
+      for (int y = 0; y <= g_maxHeight; y++) {
         cnt = g_packDeleteCount[x][y];
 
         if (cnt > 0) {
@@ -488,7 +487,6 @@ public:
 
         if (num == EMPTY || num == OJAMA) {
           sum = 0;
-          fromX = toX;
         } else {
           sum += num;
         }
@@ -536,7 +534,6 @@ public:
 
         if (num == OJAMA) {
           sum = 0;
-          fromY = toY;
         } else {
           sum += num;
         }
@@ -571,7 +568,7 @@ public:
     int toX = sx;
     char sum = g_myField[toX][toY];
 
-    while (toX < WIDTH-2 && toY < g_maxHeight) {
+    while (toX < WIDTH-2 && toY <= g_maxHeight) {
       assert(fromX <= toX);
 
       if (sum < DELETED_SUM) {
@@ -589,8 +586,6 @@ public:
 
         if (num == EMPTY || num == OJAMA) {
           sum = 0;
-          fromY = toY;
-          fromX = toX;
         } else {
           sum += num;
         }
@@ -647,8 +642,6 @@ public:
 
         if (num == EMPTY || num == OJAMA) {
           sum = 0;
-          fromY = toY;
-          fromX = toX;
         } else {
           sum += num;
         }
@@ -735,7 +728,6 @@ public:
    */
   void updatePutPackLine() {
     g_maxHeight = 0;
-    g_minHeight = HEIGHT;
 
     for (int x = 0; x < WIDTH; x++) {
       setPutPackLine(x);
@@ -754,7 +746,6 @@ public:
 
     g_myPutPackLine[x] = y;
     g_maxHeight = max(g_maxHeight, y);
-    g_minHeight = min(g_minHeight, y);
   }
 
   /**
@@ -764,7 +755,6 @@ public:
     for (int x = 2; x < WIDTH-2; x++) {
       int y = g_myPutPackLine[x];
       g_maxHeight = max(g_maxHeight, y);
-      g_minHeight = min(g_minHeight, y);
     }
   }
 
