@@ -402,7 +402,7 @@ public:
 
       if (depth > 0) {
         value += floor(pow(1.4, chainCnt) * (deleteCount/2));
-      } else if (chainCnt >= 13) {
+      } else if (chainCnt >= 13 || (g_enemyPinch && chainCnt >= 9)) {
         value += 3 * floor(pow(1.4, chainCnt) * (deleteCount/2));
       }
 
@@ -411,9 +411,6 @@ public:
 
     if (chainCnt >= 4) {
       g_chain = true;
-    }
-    if (score >= 300 || (g_enemyPinch && score >= 60)) {
-      value += WIN;
     }
 
     return value;
@@ -502,10 +499,12 @@ public:
 
         if (fromX > toX) {
           toX = fromX;
+          sum = g_myField[toX][y];
         }
       }
 
       if (sum == DELETED_SUM) {
+        assert(0 <= fromX && toX < WIDTH);
         for (int x = fromX; x <= toX; x++) {
           g_packDeleteCount[x][y]++;
         }
@@ -547,6 +546,7 @@ public:
 
         if (fromY > toY) {
           toY = fromY;
+          sum = g_myField[x][toY];
         }
       }
 
@@ -603,11 +603,13 @@ public:
         if (fromX > toX) {
           toX = fromX;
           toY = fromY;
+          sum = g_myField[toX][toY];
         }
       }
 
       if (sum == DELETED_SUM) {
         int i = 0;
+        assert(0 <= fromX && toX < WIDTH);
         for (int x = fromX; x <= toX; x++) {
           g_packDeleteCount[x][fromY+i]++;
           i++;
@@ -658,6 +660,7 @@ public:
         if (fromX > toX) {
           toY = fromY;
           toX = fromX;
+          sum = g_myField[toX][toY];
         }
       }
 
@@ -720,7 +723,7 @@ public:
       }
     }
 
-    if (ojamaCnt >= 40) {
+    if (enemyOjamaStock >= 40) {
       g_enemyPinch = true;
     }
 
