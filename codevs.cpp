@@ -386,9 +386,9 @@ public:
   int simulate(int depth) {
     int chainCnt = 0;
     int value = 0;
-    updatePutPackLine();
     g_chain = false;
     int score = 0;
+    updateMaxMinHeight();
 
     while (true) {
       int deleteCount = chainPack();
@@ -755,6 +755,17 @@ public:
     g_myPutPackLine[x] = y;
     g_maxHeight = max(g_maxHeight, y);
     g_minHeight = min(g_minHeight, y);
+  }
+
+  /**
+   * フィールドの最大の高さと最低の高さを更新する
+   */
+  void updateMaxMinHeight() {
+    for (int x = 2; x < WIDTH-2; x++) {
+      int y = g_myPutPackLine[x];
+      g_maxHeight = max(g_maxHeight, y);
+      g_minHeight = min(g_minHeight, y);
+    }
   }
 
   /**
