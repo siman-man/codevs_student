@@ -386,7 +386,6 @@ public:
     int chainCnt = 0;
     int value = 0;
     g_chain = false;
-    int score = 0;
     updateMaxMinHeight();
 
     while (true) {
@@ -396,8 +395,6 @@ public:
         fallPack();
         chainCnt++;
       }
-
-      score += floor(pow(1.3, chainCnt) * (deleteCount/2));
 
       if (depth > 0) {
         value += floor(pow(1.4, chainCnt) * (deleteCount/2));
