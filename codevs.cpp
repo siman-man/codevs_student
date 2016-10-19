@@ -260,7 +260,7 @@ public:
     for (int x = 2; x < WIDTH-2; x++) {
       int fallCnt = 0;
 
-      for (int y = 0; y < HEIGHT; y++) {
+      for (int y = 0; y < g_myPutPackLine[x]; y++) {
         if (g_myField[x][y] == EMPTY) {
           fallCnt++;
         } else if (fallCnt > 0) {
