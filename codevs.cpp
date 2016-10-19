@@ -21,8 +21,10 @@ const char DELETED_SUM = 10; // 消滅のために作るべき和の値
 const char EMPTY = 0; // 空のグリッド
 const char OJAMA = 11; // お邪魔ブロック
 
-int BEAM_WIDTH = 1500;
-int SEARCH_DEPTH = 6;
+const int WIN = 99999;
+
+int BEAM_WIDTH = 1000;
+int SEARCH_DEPTH = 8;
 
 /**
  * 乱数生成器
@@ -55,6 +57,9 @@ int g_minHeight;
 int g_beforeTime;
 int g_myOjamaStock;
 
+bool g_chain;
+bool g_enemyPinch;
+
 ll g_zoblishField[FIELD_WIDTH][FIELD_HEIGHT][12]; // zoblish hash生成用の乱数テーブル
 
 Pack g_packs[MAX_TURN]; // パック一覧
@@ -71,6 +76,7 @@ struct Command {
 
 struct Node {
   int value;
+  bool chain;
   Command command;
   char field[WIDTH][HEIGHT];
 
@@ -122,6 +128,7 @@ public:
     }
 
     g_beforeTime = 180000;
+    g_enemyPinch = false;
 
     readPackInfo();
   }
@@ -204,6 +211,7 @@ public:
             if (isValidField()) {
               Node cand;
               cand.value = simulate(depth);
+              cand.chain = g_chain;
 
               if (depth == 0) {
                 cand.command = Command(x, rot);
@@ -232,7 +240,7 @@ public:
 
           ll hash = node.hashCode();
 
-          if (!checkNodeList[hash]) {
+          if (!checkNodeList[hash] && !(depth > 0 && node.chain)) {
             checkNodeList[hash] = true;
             que.push(node);
           } else {
@@ -379,6 +387,8 @@ public:
     int chainCnt = 0;
     int value = 0;
     updatePutPackLine();
+    g_chain = false;
+    int score = 0;
 
     while (true) {
       int deleteCount = chainPack();
@@ -388,13 +398,22 @@ public:
         chainCnt++;
       }
 
+      score += floor(pow(1.3, chainCnt) * (deleteCount/2));
+
       if (depth > 0) {
         value += floor(pow(1.4, chainCnt) * (deleteCount/2));
-      } else if (chainCnt >= 12) {
+      } else if (chainCnt >= 13) {
         value += 3 * floor(pow(1.4, chainCnt) * (deleteCount/2));
       }
 
       if (deleteCount == 0) break;
+    }
+
+    if (chainCnt >= 4) {
+      g_chain = true;
+    }
+    if (score >= 300 || (g_enemyPinch && score >= 60)) {
+      value += WIN;
     }
 
     return value;
@@ -688,12 +707,21 @@ public:
     int enemyOjamaStock;
     cin >> enemyOjamaStock;
 
+    int ojamaCnt = 0;
+
     // [前のターン終了時の相手のフィールド情報]
     for (int y = 0; y < FIELD_HEIGHT; y++) {
       for (int x = 2; x < WIDTH-2; x++) {
         cin >> t;
         g_enemyField[x][FIELD_HEIGHT-y-1] = t;
+        if (t == OJAMA) {
+          ojamaCnt++;
+        }
       }
+    }
+
+    if (ojamaCnt >= 40) {
+      g_enemyPinch = true;
     }
 
     cin >> _end_;
