@@ -21,10 +21,12 @@ const char DELETED_SUM = 10; // 消滅のために作るべき和の値
 const char EMPTY = 0; // 空のグリッド
 const char OJAMA = 11; // お邪魔ブロック
 
-const int WIN = 99999;
+const int WIN = 9999999;
 
-int BEAM_WIDTH = 1500;
-int SEARCH_DEPTH = 8;
+int BASE_BEAM_WIDTH = 8000;
+int BEAM_WIDTH = 8000;
+int SEARCH_DEPTH = 4;
+int g_scoreLimit = 250;
 
 /**
  * 乱数生成器
@@ -75,12 +77,14 @@ struct Command {
 
 struct Node {
   int value;
+  int beforeX;
   bool chain;
   Command command;
   char field[WIDTH][HEIGHT];
 
   Node () {
     this->value = 0;
+    this->beforeX = 0;
   }
 
   ll hashCode() {
@@ -209,8 +213,9 @@ public:
 
             if (isValidField()) {
               Node cand;
-              cand.value = simulate(depth);
+              cand.value = simulate(depth) - abs(x - node.beforeX)/2;
               cand.chain = g_chain;
+              cand.beforeX = x;
 
               if (depth == 0) {
                 cand.command = Command(x, rot);
@@ -232,14 +237,18 @@ public:
         for (int j = 0; j < BEAM_WIDTH && !pque.empty(); j++) {
           Node node = pque.top(); pque.pop();
 
-          if (maxValue < node.value) {
+          if (node.value >= WIN) {
+            return node.command;
+          }
+
+          if (maxValue < node.value && depth > 0) {
             maxValue = node.value;
             bestCommand = node.command;
           }
 
           ll hash = node.hashCode();
 
-          if (!checkNodeList[hash] && !(depth > 0 && node.chain)) {
+          if (!checkNodeList[hash] && !node.chain) {
             checkNodeList[hash] = true;
             que.push(node);
           } else {
@@ -258,10 +267,12 @@ public:
   void fallPack() {
     for (int x = 2; x < WIDTH-2; x++) {
       int fallCnt = 0;
+      int limitY = g_myPutPackLine[x];
 
-      for (int y = 0; y < g_myPutPackLine[x]; y++) {
+      for (int y = 0; y < limitY; y++) {
         if (g_myField[x][y] == EMPTY) {
           fallCnt++;
+          g_myPutPackLine[x]--;
         } else if (fallCnt > 0) {
           g_myField[x][y-fallCnt] = g_myField[x][y];
           g_myField[x][y] = EMPTY;
@@ -330,8 +341,6 @@ public:
 
   /**
    * パックにお邪魔を埋め込む
-   *
-   * TODO: 複数ターンにまたがるお邪魔についても対応を考える
    */
   void fillOjama(int turn, int ojamaStock) {
     for (int t = turn; t <= min(MAX_TURN-1, (turn + SEARCH_DEPTH)) && ojamaStock > 0; t++) {
@@ -386,7 +395,8 @@ public:
     int chainCnt = 0;
     int value = 0;
     g_chain = false;
-    updateMaxMinHeight();
+    int score = 0;
+    updateMaxHeight();
 
     while (true) {
       int deleteCount = chainPack();
@@ -396,16 +406,17 @@ public:
         chainCnt++;
       }
 
-      if (depth > 0) {
-        value += floor(pow(1.4, chainCnt) * (deleteCount/2));
-      } else if (chainCnt >= 13 || (g_enemyPinch && chainCnt >= 9)) {
-        value += 3 * floor(pow(1.4, chainCnt) * (deleteCount/2));
-      }
+      score += floor(pow(1.3, chainCnt) * (deleteCount/2));
+      value += floor(pow(1.5, chainCnt) * (deleteCount/2));
 
       if (deleteCount == 0) break;
     }
 
-    if (chainCnt >= 4) {
+    if (score >= g_scoreLimit) {
+      value += WIN;
+    }
+
+    if (chainCnt >= 3) {
       g_chain = true;
     }
 
@@ -420,11 +431,11 @@ public:
   int chainPack() {
     memset(g_packDeleteCount, 0, sizeof(g_packDeleteCount));
 
-    for (int y = 0; y <= g_maxHeight; y++) {
+    for (int y = 0; y < g_maxHeight; y++) {
       deleteCheckHorizontal(y);
-    }
-    for (int y = 0; y <= g_maxHeight; y++) {
       deleteCheckDiagonalRightUp(y, 2);
+    }
+    for (int y = 1; y <= g_maxHeight; y++) {
       deleteCheckDiagonalRightDown(y, 2);
     }
     for (int x = 2; x < WIDTH-2; x++) {
@@ -447,7 +458,7 @@ public:
     int cnt = 0;
 
     for (int x = 2; x < WIDTH-2; x++) {
-      for (int y = 0; y <= g_maxHeight; y++) {
+      for (int y = 0; y < g_myPutPackLine[x]; y++) {
         cnt = g_packDeleteCount[x][y];
 
         if (cnt > 0) {
@@ -565,14 +576,13 @@ public:
     int toX = sx;
     char sum = g_myField[toX][toY];
 
-    while (toX < WIDTH-2 && toY <= g_maxHeight) {
-      assert(fromX <= toX);
+    while (toX < WIDTH-2 && toY < g_maxHeight) {
 
       if (sum < DELETED_SUM) {
         toY++;
         toX++;
 
-        if (toX >= WIDTH-2 || toY >= HEIGHT) break;
+        if (toX >= WIDTH-2 || toY >= g_maxHeight) break;
 
         if (sum == 0) {
           fromY = toY;
@@ -678,6 +688,14 @@ public:
     int myRemainTime;
     cin >> myRemainTime;
 
+    if (myRemainTime > 120000) {
+      BEAM_WIDTH = 3 * BASE_BEAM_WIDTH;
+    } else if (myRemainTime < 60000) {
+      BEAM_WIDTH = BASE_BEAM_WIDTH / 2;
+    } else {
+      BEAM_WIDTH = BASE_BEAM_WIDTH;
+    }
+
     fprintf(stderr,"%d: myRemainTime = %d, use time = %d\n", turn, myRemainTime, g_beforeTime - myRemainTime);
     g_beforeTime = myRemainTime;
 
@@ -714,6 +732,7 @@ public:
     }
 
     if (enemyOjamaStock >= 40) {
+      g_scoreLimit = 100;
       g_enemyPinch = true;
     }
 
@@ -724,8 +743,6 @@ public:
    * ブロックを落下させる時に落下させる位置を更新する
    */
   void updatePutPackLine() {
-    g_maxHeight = 0;
-
     for (int x = 0; x < WIDTH; x++) {
       setPutPackLine(x);
     }
@@ -742,13 +759,14 @@ public:
     }
 
     g_myPutPackLine[x] = y;
-    g_maxHeight = max(g_maxHeight, y);
   }
 
   /**
    * フィールドの最大の高さと最低の高さを更新する
    */
-  void updateMaxMinHeight() {
+  void updateMaxHeight() {
+    g_maxHeight = 0 ;
+
     for (int x = 2; x < WIDTH-2; x++) {
       int y = g_myPutPackLine[x];
       g_maxHeight = max(g_maxHeight, y);
