@@ -223,8 +223,13 @@ public:
                 cand.command = node.command;
               }
 
+              updateMaxHeight();
+
               memcpy(cand.field, g_myField, sizeof(g_myField));
-              pque.push(cand);
+
+              if (g_maxHeight < DANGER_LINE) {
+                pque.push(cand);
+              }
             }
 
             memcpy(g_myField, node.field, sizeof(node.field));
@@ -378,10 +383,6 @@ public:
     if (g_myPutPackLine[1] > 0) return false;
     if (g_myPutPackLine[12] > 0) return false;
     if (g_myPutPackLine[13] > 0) return false;
-
-    for (int x = 2; x < WIDTH-2; x++) {
-      if (g_myPutPackLine[x] >= DANGER_LINE) return false;
-    }
 
     return true;
   }
