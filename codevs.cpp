@@ -397,9 +397,9 @@ public:
     int value = 0;
     g_chain = false;
     int score = 0;
-    updateMaxHeight();
 
     while (true) {
+      updateMaxHeight();
       int deleteCount = chainPack();
 
       if (deleteCount > 0) {
@@ -436,7 +436,7 @@ public:
       deleteCheckHorizontal(y);
       deleteCheckDiagonalRightUp(y, 2);
     }
-    for (int y = 1; y <= g_maxHeight; y++) {
+    for (int y = 1; y < g_maxHeight; y++) {
       deleteCheckDiagonalRightDown(y, 2);
     }
     for (int x = 2; x < WIDTH-2; x++) {
