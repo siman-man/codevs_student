@@ -395,8 +395,8 @@ public:
   int simulate(int depth) {
     int chainCnt = 0;
     int value = 0;
-    g_chain = false;
     int score = 0;
+    g_chain = false;
 
     while (true) {
       updateMaxHeight();
@@ -432,11 +432,13 @@ public:
   int chainPack() {
     memset(g_packDeleteCount, 0, sizeof(g_packDeleteCount));
 
-    for (int y = 0; y < g_maxHeight; y++) {
+    for (int y = 0; y <= g_maxHeight; y++) {
       deleteCheckHorizontal(y);
+    }
+    for (int y = 0; y < g_maxHeight; y++) {
       deleteCheckDiagonalRightUp(y, 2);
     }
-    for (int y = 1; y < g_maxHeight; y++) {
+    for (int y = 1; y <= g_maxHeight; y++) {
       deleteCheckDiagonalRightDown(y, 2);
     }
     for (int x = 2; x < WIDTH-2; x++) {
@@ -577,13 +579,13 @@ public:
     int toX = sx;
     char sum = g_myField[toX][toY];
 
-    while (toX < WIDTH-2 && toY < g_maxHeight) {
+    while (toX < WIDTH-2 && toY <= g_maxHeight) {
 
       if (sum < DELETED_SUM) {
         toY++;
         toX++;
 
-        if (toX >= WIDTH-2 || toY >= g_maxHeight) break;
+        if (toX >= WIDTH-2 || toY > g_maxHeight) break;
 
         if (sum == 0) {
           fromY = toY;
@@ -770,7 +772,7 @@ public:
 
     for (int x = 2; x < WIDTH-2; x++) {
       int y = g_myPutPackLine[x];
-      g_maxHeight = max(g_maxHeight, y);
+      g_maxHeight = max(g_maxHeight, y-1);
     }
   }
 
