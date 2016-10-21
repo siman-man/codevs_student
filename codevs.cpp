@@ -12,7 +12,7 @@ typedef long long ll;
 const int MAX_TURN = 500; // ゲームの最大ターン数
 const int FIELD_WIDTH = 10; // フィールドの横幅
 const int FIELD_HEIGHT = 16; // フィールドの縦幅
-const int WIDTH = 2 + FIELD_WIDTH + 2; // 余分な領域も含めたフィールドの横幅
+const int WIDTH = 1 + FIELD_WIDTH + 1; // 余分な領域も含めたフィールドの横幅
 const int HEIGHT = FIELD_HEIGHT + 3; // 余分な領域も含めたフィールドの縦幅
 const int DANGER_LINE = 16; // 危険ライン
 
@@ -23,7 +23,7 @@ const char OJAMA = 11; // お邪魔ブロック
 
 const int WIN = 9999999;
 
-int BASE_BEAM_WIDTH = 8000;
+int BASE_BEAM_WIDTH = 1000;
 int BEAM_WIDTH = 8000;
 int SEARCH_DEPTH = 4;
 int g_scoreLimit = 250;
@@ -92,7 +92,7 @@ struct Node {
 
     for (int x = 0; x < FIELD_WIDTH; x++) {
       for (int y = 0; y < FIELD_HEIGHT; y++) {
-        int num = this->field[x+2][y];
+        int num = this->field[x+1][y];
         if (num == EMPTY) continue;
         hash ^= g_zoblishField[x][y][num];
       }
@@ -174,7 +174,7 @@ public:
     }
 
     Command command = getBestCommand(turn);
-    cout << command.pos-2 << " " << command.rot << endl;
+    cout << command.pos-1 << " " << command.rot << endl;
     fflush(stderr);
 
     if (g_myOjamaStock > 0) {
@@ -207,7 +207,7 @@ public:
         memcpy(g_myField, node.field, sizeof(node.field));
         updatePutPackLine();
 
-        for (int x = 0; x < WIDTH-2; x++) {
+        for (int x = -1; x <= FIELD_WIDTH; x++) {
           for (int rot = 0; rot < 4; rot++) {
 
             if (putPack(x, rot, pack)) {
@@ -269,7 +269,7 @@ public:
    * パックの落下処理
    */
   void fallPack() {
-    for (int x = 2; x < WIDTH-2; x++) {
+    for (int x = 1; x <= FIELD_WIDTH; x++) {
       int fallCnt = 0;
       int limitY = g_myPutPackLine[x];
 
@@ -343,17 +343,17 @@ public:
     assert(t2 >= 0);
 
     if (t0 != EMPTY) {
-      if (x < 2 || x >= WIDTH-2) return false;
+      if (x < 1 || x > FIELD_WIDTH) return false;
       g_myField[x][y] = t0;
       y++;
     }
     if (t1 != EMPTY) {
-      if (x < 2 || x >= WIDTH-2) return false;
+      if (x < 1 || x > FIELD_WIDTH) return false;
       g_myField[x][y] = t1;
       y++;
     }
     if (t2 != EMPTY) {
-      if (x < 2 || x >= WIDTH-2) return false;
+      if (x < 1 || x > FIELD_WIDTH) return false;
       g_myField[x][y] = t2;
       y++;
     }
@@ -442,12 +442,12 @@ public:
       deleteCheckHorizontal(y);
     }
     for (int y = 0; y < g_maxHeight; y++) {
-      deleteCheckDiagonalRightUp(y, 2);
+      deleteCheckDiagonalRightUp(y, 1);
     }
     for (int y = 1; y <= g_maxHeight; y++) {
-      deleteCheckDiagonalRightDown(y, 2);
+      deleteCheckDiagonalRightDown(y, 1);
     }
-    for (int x = 2; x < WIDTH-2; x++) {
+    for (int x = 1; x <= FIELD_WIDTH; x++) {
       deleteCheckVertical(x);
       deleteCheckDiagonalRightUp(0, x);
       deleteCheckDiagonalRightDown(g_maxHeight, x);
@@ -466,7 +466,7 @@ public:
     int deleteCnt = 0;
     int cnt = 0;
 
-    for (int x = 2; x < WIDTH-2; x++) {
+    for (int x = 1; x <= FIELD_WIDTH; x++) {
       for (int y = 0; y < g_myPutPackLine[x]; y++) {
         cnt = g_packDeleteCount[x][y];
 
@@ -486,15 +486,15 @@ public:
    * @param [int] y チェックするy座標
    */
   void deleteCheckHorizontal(int y) {
-    int fromX = 2;
-    int toX = 2;
+    int fromX = 1;
+    int toX = 1;
     char sum = g_myField[toX][y];
 
-    while (toX < WIDTH-2) {
+    while (toX <= FIELD_WIDTH) {
       if (sum < DELETED_SUM) {
         toX++;
 
-        if (toX >= WIDTH-2) break;
+        if (toX > FIELD_WIDTH) break;
 
         if (sum == 0) {
           fromX = toX;
@@ -585,13 +585,13 @@ public:
     int toX = sx;
     char sum = g_myField[toX][toY];
 
-    while (toX < WIDTH-2 && toY <= g_maxHeight) {
+    while (toX <= FIELD_WIDTH && toY <= g_maxHeight) {
 
       if (sum < DELETED_SUM) {
         toY++;
         toX++;
 
-        if (toX >= WIDTH-2 || toY > g_maxHeight) break;
+        if (toX > FIELD_WIDTH || toY > g_maxHeight) break;
 
         if (sum == 0) {
           fromY = toY;
@@ -642,12 +642,12 @@ public:
     int toX = sx;
     char sum = g_myField[toX][toY];
 
-    while (toX < WIDTH && toY >= 0) {
+    while (toX <= FIELD_WIDTH && toY >= 0) {
       if (sum < DELETED_SUM) {
         toY--;
         toX++;
 
-        if (toX >= WIDTH-2 || toY < 0) break;
+        if (toX > FIELD_WIDTH || toY < 0) break;
 
         if (sum == 0) {
           fromY = toY;
@@ -715,7 +715,7 @@ public:
     // [前のターン終了時の自分のフィールド情報]
     int t;
     for (int y = 0; y < FIELD_HEIGHT; y++) {
-      for (int x = 2; x < WIDTH-2; x++) {
+      for (int x = 1; x <= FIELD_WIDTH; x++) {
         cin >> t;
         g_myField[x][FIELD_HEIGHT-y-1] = t;
       }
@@ -731,7 +731,7 @@ public:
 
     // [前のターン終了時の相手のフィールド情報]
     for (int y = 0; y < FIELD_HEIGHT; y++) {
-      for (int x = 2; x < WIDTH-2; x++) {
+      for (int x = 1; x <= FIELD_WIDTH; x++) {
         cin >> t;
         g_enemyField[x][FIELD_HEIGHT-y-1] = t;
         if (t == OJAMA) {
@@ -776,7 +776,7 @@ public:
   void updateMaxHeight() {
     g_maxHeight = 0 ;
 
-    for (int x = 2; x < WIDTH-2; x++) {
+    for (int x = 1; x <= FIELD_WIDTH; x++) {
       int y = g_myPutPackLine[x];
       g_maxHeight = max(g_maxHeight, y-1);
     }
