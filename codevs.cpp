@@ -13,8 +13,8 @@ const int MAX_TURN = 500; // ゲームの最大ターン数
 const int FIELD_WIDTH = 10; // フィールドの横幅
 const int FIELD_HEIGHT = 16; // フィールドの縦幅
 const int WIDTH = 1 + FIELD_WIDTH + 1; // 余分な領域も含めたフィールドの横幅
-const int HEIGHT = FIELD_HEIGHT + 3; // 余分な領域も含めたフィールドの縦幅
-const int DANGER_LINE = 16; // 危険ライン
+const int HEIGHT = 1 + FIELD_HEIGHT + 3; // 余分な領域も含めたフィールドの縦幅
+const int DANGER_LINE = FIELD_HEIGHT + 1; // 危険ライン
 
 const char DELETED_SUM = 10; // 消滅のために作るべき和の値
 
@@ -23,7 +23,7 @@ const char OJAMA = 11; // お邪魔ブロック
 
 const int WIN = 9999999;
 
-int BASE_BEAM_WIDTH = 8000;
+int BASE_BEAM_WIDTH = 1000;
 int BEAM_WIDTH = 8000;
 int SEARCH_DEPTH = 4;
 int g_scoreLimit = 250;
@@ -91,7 +91,7 @@ struct Node {
     ll hash = 0;
 
     for (int x = 1; x <= FIELD_WIDTH; x++) {
-      for (int y = 0; y < FIELD_HEIGHT; y++) {
+      for (int y = 1; y <= FIELD_HEIGHT; y++) {
         int num = this->field[x][y];
         if (num == EMPTY) continue;
         hash ^= g_zoblishField[x][y][num];
@@ -273,7 +273,7 @@ public:
       int fallCnt = 0;
       int limitY = g_myPutPackLine[x];
 
-      for (int y = 0; y < limitY; y++) {
+      for (int y = 1; y < limitY; y++) {
         if (g_myField[x][y] == EMPTY) {
           fallCnt++;
           g_myPutPackLine[x]--;
@@ -358,6 +358,7 @@ public:
       y++;
     }
 
+    assert(y <= HEIGHT);
     g_myPutPackLine[x] = y;
     return true;
   }
@@ -438,20 +439,20 @@ public:
   int chainPack() {
     memset(g_packDeleteCount, 0, sizeof(g_packDeleteCount));
 
-    for (int y = 0; y <= g_maxHeight; y++) {
+    for (int y = 1; y <= g_maxHeight; y++) {
       deleteCheckHorizontal(y);
     }
-    for (int y = 0; y < g_maxHeight; y++) {
+    for (int y = 1; y < g_maxHeight; y++) {
       deleteCheckDiagonalRightUp(y, 1);
     }
-    for (int y = 1; y <= g_maxHeight; y++) {
+    for (int y = 2; y <= g_maxHeight; y++) {
       deleteCheckDiagonalRightDown(y, 1);
     }
     for (int x = 1; x <= FIELD_WIDTH; x++) {
       deleteCheckVertical(x);
     }
     for (int x = 1; x < FIELD_WIDTH; x++) {
-      deleteCheckDiagonalRightUp(0, x);
+      deleteCheckDiagonalRightUp(1, x);
       deleteCheckDiagonalRightDown(g_maxHeight, x);
     }
 
@@ -469,7 +470,7 @@ public:
     int cnt = 0;
 
     for (int x = 1; x <= FIELD_WIDTH; x++) {
-      for (int y = 0; y < g_myPutPackLine[x]; y++) {
+      for (int y = 1; y < g_myPutPackLine[x]; y++) {
         cnt = g_packDeleteCount[x][y];
 
         if (cnt > 0) {
@@ -535,8 +536,8 @@ public:
    * @param [int] x チェックするx座標
    */
   void deleteCheckVertical(int x) {
-    int fromY = 0;
-    int toY = 0;
+    int fromY = 1;
+    int toY = 1;
     char sum = g_myField[x][toY];
 
     while (toY < HEIGHT) {
@@ -644,7 +645,7 @@ public:
     int toX = sx;
     char sum = g_myField[toX][toY];
 
-    while (toX <= FIELD_WIDTH && toY >= 0) {
+    while (toX <= FIELD_WIDTH && toY >= 1) {
       if (sum < DELETED_SUM) {
         toY--;
         toX++;
@@ -719,7 +720,7 @@ public:
     for (int y = 0; y < FIELD_HEIGHT; y++) {
       for (int x = 1; x <= FIELD_WIDTH; x++) {
         cin >> t;
-        g_myField[x][FIELD_HEIGHT-y-1] = t;
+        g_myField[x][FIELD_HEIGHT-y] = t;
       }
     }
 
@@ -735,7 +736,7 @@ public:
     for (int y = 0; y < FIELD_HEIGHT; y++) {
       for (int x = 1; x <= FIELD_WIDTH; x++) {
         cin >> t;
-        g_enemyField[x][FIELD_HEIGHT-y-1] = t;
+        g_enemyField[x][FIELD_HEIGHT-y] = t;
         if (t == OJAMA) {
           ojamaCnt++;
         }
@@ -763,7 +764,7 @@ public:
    * @param [int] x x座標の値
    */
   void setPutPackLine(int x) {
-    int y = 0;
+    int y = 1;
 
     while (g_myField[x][y] != EMPTY && y < HEIGHT-1) {
       y++;
@@ -776,7 +777,7 @@ public:
    * フィールドの最大の高さと最低の高さを更新する
    */
   void updateMaxHeight() {
-    g_maxHeight = 0 ;
+    g_maxHeight = 1 ;
 
     for (int x = 1; x <= FIELD_WIDTH; x++) {
       int y = g_myPutPackLine[x];
