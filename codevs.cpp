@@ -13,7 +13,7 @@ const int MAX_TURN = 500; // ゲームの最大ターン数
 const int FIELD_WIDTH = 10; // フィールドの横幅
 const int FIELD_HEIGHT = 16; // フィールドの縦幅
 const int WIDTH = 1 + FIELD_WIDTH + 1; // 余分な領域も含めたフィールドの横幅
-const int HEIGHT = 1 + FIELD_HEIGHT + 3; // 余分な領域も含めたフィールドの縦幅
+const int HEIGHT = 1 + FIELD_HEIGHT + 3 + 1; // 余分な領域も含めたフィールドの縦幅
 const int DANGER_LINE = FIELD_HEIGHT + 1; // 危険ライン
 
 const char DELETED_SUM = 10; // 消滅のために作るべき和の値
