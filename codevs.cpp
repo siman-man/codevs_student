@@ -209,9 +209,8 @@ public:
 
         for (int x = 0; x < WIDTH-2; x++) {
           for (int rot = 0; rot < 4; rot++) {
-            putPack(x, rot, pack);
 
-            if (isValidField()) {
+            if (putPack(x, rot, pack)) {
               Node cand;
               cand.value = simulate(depth) - abs(x - node.beforeX)/2;
               cand.chain = g_chain;
@@ -292,32 +291,37 @@ public:
    * @param [int] x 設置するx座標
    * @param [int] rot 回転数
    * @param [Pack] pack パック情報
+   * @return [bool] 設置が成功したかどうか
    */
-  void putPack(int x, int rot, const Pack &pack) {
+  bool putPack(int x, int rot, const Pack &pack) {
+    bool success = true;
+
     switch (rot) {
       case 0:
-        putLinePack(  x, pack.t[6], pack.t[3], pack.t[0]);
-        putLinePack(x+1, pack.t[7], pack.t[4], pack.t[1]);
-        putLinePack(x+2, pack.t[8], pack.t[5], pack.t[2]);
+        success &= putLinePack(  x, pack.t[6], pack.t[3], pack.t[0]);
+        success &= putLinePack(x+1, pack.t[7], pack.t[4], pack.t[1]);
+        success &= putLinePack(x+2, pack.t[8], pack.t[5], pack.t[2]);
         break;
       case 1:
-        putLinePack(  x, pack.t[8], pack.t[7], pack.t[6]);
-        putLinePack(x+1, pack.t[5], pack.t[4], pack.t[3]);
-        putLinePack(x+2, pack.t[2], pack.t[1], pack.t[0]);
+        success &= putLinePack(  x, pack.t[8], pack.t[7], pack.t[6]);
+        success &= putLinePack(x+1, pack.t[5], pack.t[4], pack.t[3]);
+        success &= putLinePack(x+2, pack.t[2], pack.t[1], pack.t[0]);
         break;
       case 2:
-        putLinePack(  x, pack.t[2], pack.t[5], pack.t[8]);
-        putLinePack(x+1, pack.t[1], pack.t[4], pack.t[7]);
-        putLinePack(x+2, pack.t[0], pack.t[3], pack.t[6]);
+        success &= putLinePack(  x, pack.t[2], pack.t[5], pack.t[8]);
+        success &= putLinePack(x+1, pack.t[1], pack.t[4], pack.t[7]);
+        success &= putLinePack(x+2, pack.t[0], pack.t[3], pack.t[6]);
         break;
       case 3:
-        putLinePack(  x, pack.t[0], pack.t[1], pack.t[2]);
-        putLinePack(x+1, pack.t[3], pack.t[4], pack.t[5]);
-        putLinePack(x+2, pack.t[6], pack.t[7], pack.t[8]);
+        success &= putLinePack(  x, pack.t[0], pack.t[1], pack.t[2]);
+        success &= putLinePack(x+1, pack.t[3], pack.t[4], pack.t[5]);
+        success &= putLinePack(x+2, pack.t[6], pack.t[7], pack.t[8]);
         break;
       default:
         assert(false);
     }
+
+    return success;
   }
 
   /**
@@ -329,19 +333,33 @@ public:
    * @param [int] t0 パックのブロックの値
    * @param [int] t1 パックのブロックの値
    * @param [int] t2 パックのブロックの値
+   * @param [bool] 設置可能かどうか
    */
-  void putLinePack(int x, int t0, int t1, int t2) {
+   bool putLinePack(int x, int t0, int t1, int t2) {
     int y = g_myPutPackLine[x];
 
     assert(t0 >= 0);
     assert(t1 >= 0);
     assert(t2 >= 0);
 
-    if (t0 != EMPTY) { g_myField[x][y] = t0; y++; }
-    if (t1 != EMPTY) { g_myField[x][y] = t1; y++; }
-    if (t2 != EMPTY) { g_myField[x][y] = t2; y++; }
+    if (t0 != EMPTY) {
+      if (x < 2 || x >= WIDTH-2) return false;
+      g_myField[x][y] = t0;
+      y++;
+    }
+    if (t1 != EMPTY) {
+      if (x < 2 || x >= WIDTH-2) return false;
+      g_myField[x][y] = t1;
+      y++;
+    }
+    if (t2 != EMPTY) {
+      if (x < 2 || x >= WIDTH-2) return false;
+      g_myField[x][y] = t2;
+      y++;
+    }
 
     g_myPutPackLine[x] = y;
+    return true;
   }
 
   /**
@@ -373,18 +391,6 @@ public:
         }
       }
     }
-  }
-
-  /**
-   * 有効なフィールドかどうかを調べる
-   */
-  bool isValidField() {
-    if (g_myPutPackLine[0] > 0) return false;
-    if (g_myPutPackLine[1] > 0) return false;
-    if (g_myPutPackLine[12] > 0) return false;
-    if (g_myPutPackLine[13] > 0) return false;
-
-    return true;
   }
 
   /**
