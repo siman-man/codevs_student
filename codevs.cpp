@@ -23,7 +23,7 @@ const char OJAMA = 11; // お邪魔ブロック
 
 const int WIN = 9999999;
 
-int BASE_BEAM_WIDTH = 1000;
+int BASE_BEAM_WIDTH = 8000;
 int BEAM_WIDTH = 8000;
 int SEARCH_DEPTH = 4;
 int g_scoreLimit = 250;
@@ -61,7 +61,7 @@ int g_myOjamaStock;
 bool g_chain;
 bool g_enemyPinch;
 
-ll g_zoblishField[FIELD_WIDTH][FIELD_HEIGHT][12]; // zoblish hash生成用の乱数テーブル
+ll g_zoblishField[WIDTH][HEIGHT][12]; // zoblish hash生成用の乱数テーブル
 
 Pack g_packs[MAX_TURN]; // パック一覧
 
@@ -90,9 +90,9 @@ struct Node {
   ll hashCode() {
     ll hash = 0;
 
-    for (int x = 0; x < FIELD_WIDTH; x++) {
+    for (int x = 1; x <= FIELD_WIDTH; x++) {
       for (int y = 0; y < FIELD_HEIGHT; y++) {
-        int num = this->field[x+1][y];
+        int num = this->field[x][y];
         if (num == EMPTY) continue;
         hash ^= g_zoblishField[x][y][num];
       }
@@ -122,8 +122,8 @@ public:
     memset(g_myField, EMPTY, sizeof(g_myField));
     memset(g_enemyField, EMPTY, sizeof(g_enemyField));
 
-    for (int x = 0; x < FIELD_WIDTH; x++) {
-      for (int y = 0; y < FIELD_HEIGHT; y++) {
+    for (int x = 0; x < WIDTH; x++) {
+      for (int y = 0; y < HEIGHT; y++) {
         for (int i = 0; i < 12; i++) {
           g_zoblishField[x][y][i] = xor128();
         }
@@ -449,6 +449,8 @@ public:
     }
     for (int x = 1; x <= FIELD_WIDTH; x++) {
       deleteCheckVertical(x);
+    }
+    for (int x = 1; x < FIELD_WIDTH; x++) {
       deleteCheckDiagonalRightUp(0, x);
       deleteCheckDiagonalRightDown(g_maxHeight, x);
     }
@@ -752,7 +754,7 @@ public:
    * ブロックを落下させる時に落下させる位置を更新する
    */
   void updatePutPackLine() {
-    for (int x = 0; x < WIDTH; x++) {
+    for (int x = 1; x <= FIELD_WIDTH; x++) {
       setPutPackLine(x);
     }
   }
