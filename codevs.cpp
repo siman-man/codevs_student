@@ -222,11 +222,8 @@ public:
                 cand.command = node.command;
               }
 
-              updateMaxHeight();
-
-              memcpy(cand.field, g_myField, sizeof(g_myField));
-
               if (g_maxHeight < DANGER_LINE) {
+                memcpy(cand.field, g_myField, sizeof(g_myField));
                 pque.push(cand);
               }
             }
