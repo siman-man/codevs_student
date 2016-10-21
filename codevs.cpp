@@ -23,7 +23,7 @@ const char OJAMA = 11; // お邪魔ブロック
 
 const int WIN = 9999999;
 
-int BASE_BEAM_WIDTH = 1000;
+int BASE_BEAM_WIDTH = 8000;
 int BEAM_WIDTH = 8000;
 int SEARCH_DEPTH = 4;
 int g_scoreLimit = 250;
