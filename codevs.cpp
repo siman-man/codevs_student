@@ -63,6 +63,13 @@ bool g_enemyPinch;
 
 ll g_zoblishField[WIDTH][HEIGHT][12]; // zoblish hash生成用の乱数テーブル
 
+ll g_chainCheckHorizontal[HEIGHT]; // 連鎖判定フィールド
+ll g_chainCheckVertical[WIDTH]; // 連鎖判定フィールド
+ll g_chainCheckRightUpH[WIDTH]; // 連鎖判定フィールド
+ll g_chainCheckRightUpV[HEIGHT]; // 連鎖判定フィールド
+ll g_chainCheckRightDownV[HEIGHT]; // 連鎖判定フィールド
+ll g_checkId;
+
 Pack g_packs[MAX_TURN]; // パック一覧
 
 struct Command {
@@ -121,6 +128,13 @@ public:
 
     memset(g_myField, EMPTY, sizeof(g_myField));
     memset(g_enemyField, EMPTY, sizeof(g_enemyField));
+    memset(g_chainCheckHorizontal, -1, sizeof(g_chainCheckHorizontal));
+    memset(g_chainCheckVertical, -1, sizeof(g_chainCheckVertical));
+    memset(g_chainCheckRightUpH, -1, sizeof(g_chainCheckRightUpH));
+    memset(g_chainCheckRightUpV, -1, sizeof(g_chainCheckRightUpV));
+    memset(g_chainCheckRightDownV, -1, sizeof(g_chainCheckRightDownV));
+
+    g_checkId = 0;
 
     for (int x = 0; x < WIDTH; x++) {
       for (int y = 0; y < HEIGHT; y++) {
@@ -277,6 +291,18 @@ public:
         } else if (fallCnt > 0) {
           g_myField[x][y-fallCnt] = g_myField[x][y];
           g_myField[x][y] = EMPTY;
+          g_chainCheckHorizontal[y-fallCnt] = g_checkId;
+          g_chainCheckVertical[x] = g_checkId;
+
+          if (x - (y-fallCnt) >= 0) {
+            g_chainCheckRightUpH[x - (y-fallCnt) + 1] = g_checkId;
+          }
+          if ((y-fallCnt) - x >= 0) {
+            g_chainCheckRightUpV[(y-fallCnt) - x + 1] = g_checkId;
+          }
+          if ((y-fallCnt) + x <= HEIGHT) {
+            g_chainCheckRightDownV[(y-fallCnt) + x - 1] = g_checkId;
+          }
         }
       }
     }
@@ -342,16 +368,31 @@ public:
     if (t0 != EMPTY) {
       if (x < 1 || x > FIELD_WIDTH) return false;
       g_myField[x][y] = t0;
+      g_chainCheckHorizontal[y] = g_checkId;
+      g_chainCheckVertical[x] = g_checkId;
+      if (x-y >= 0) g_chainCheckRightUpH[x-y+1] = g_checkId;
+      if (y-x >= 0) g_chainCheckRightUpV[y-x+1] = g_checkId;
+      if (y+x <= HEIGHT) g_chainCheckRightDownV[y+x-1] = g_checkId;
       y++;
     }
     if (t1 != EMPTY) {
       if (x < 1 || x > FIELD_WIDTH) return false;
       g_myField[x][y] = t1;
+      g_chainCheckHorizontal[y] = g_checkId;
+      g_chainCheckVertical[x] = g_checkId;
+      if (x-y >= 0) g_chainCheckRightUpH[x-y+1] = g_checkId;
+      if (y-x >= 0) g_chainCheckRightUpV[y-x+1] = g_checkId;
+      if (y+x <= HEIGHT) g_chainCheckRightDownV[y+x-1] = g_checkId;
       y++;
     }
     if (t2 != EMPTY) {
       if (x < 1 || x > FIELD_WIDTH) return false;
       g_myField[x][y] = t2;
+      g_chainCheckHorizontal[y] = g_checkId;
+      g_chainCheckVertical[x] = g_checkId;
+      if (x-y >= 0) g_chainCheckRightUpH[x-y+1] = g_checkId;
+      if (y-x >= 0) g_chainCheckRightUpV[y-x+1] = g_checkId;
+      if (y+x <= HEIGHT) g_chainCheckRightDownV[y+x-1] = g_checkId;
       y++;
     }
 
@@ -407,6 +448,7 @@ public:
       int deleteCount = chainPack();
 
       if (deleteCount > 0) {
+        g_checkId++;
         fallPack();
         chainCnt++;
       }
@@ -443,19 +485,29 @@ public:
     memset(g_packDeleteCount, 0, sizeof(g_packDeleteCount));
 
     for (int y = 1; y <= g_maxHeight; y++) {
-      deleteCheckHorizontal(y);
+      if (g_chainCheckHorizontal[y] == g_checkId) {
+        deleteCheckHorizontal(y);
+      }
     }
     for (int y = 1; y < g_maxHeight; y++) {
-      deleteCheckDiagonalRightUp(y, 1);
+      if (g_chainCheckRightUpV[y] == g_checkId) {
+        deleteCheckDiagonalRightUp(y, 1);
+      }
     }
     for (int y = 2; y <= g_maxHeight; y++) {
-      deleteCheckDiagonalRightDown(y, 1);
+      if (g_chainCheckRightDownV[y] == g_checkId) {
+        deleteCheckDiagonalRightDown(y, 1);
+      }
     }
     for (int x = 1; x <= FIELD_WIDTH; x++) {
-      deleteCheckVertical(x);
+      if (g_chainCheckVertical[x] == g_checkId) {
+        deleteCheckVertical(x);
+      }
     }
     for (int x = 1; x < FIELD_WIDTH; x++) {
-      deleteCheckDiagonalRightUp(1, x);
+      if (g_chainCheckRightUpH[x] == g_checkId) {
+        deleteCheckDiagonalRightUp(1, x);
+      }
       deleteCheckDiagonalRightDown(g_maxHeight, x);
     }
 
