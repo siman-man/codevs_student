@@ -51,6 +51,7 @@ int g_enemyField[WIDTH][HEIGHT]; // 敵フィールド
 
 int g_myPutPackLine[WIDTH]; // 次にブロックを設置する高さを保持する配列
 int g_enemyPutPackLine[WIDTH]; // 次にブロックを設置する高さを保持する配列
+int g_minDeleteHeight[WIDTH]; // 削除されたブロックの最低の高さを保存
 
 int g_packDeleteCount[WIDTH][HEIGHT];
 
@@ -284,24 +285,25 @@ public:
       int fallCnt = 0;
       int limitY = g_myPutPackLine[x];
 
-      for (int y = 1; y < limitY; y++) {
+      for (int y = g_minDeleteHeight[x]; y < limitY; y++) {
         if (g_myField[x][y] == EMPTY) {
           fallCnt++;
           g_myPutPackLine[x]--;
         } else if (fallCnt > 0) {
-          g_myField[x][y-fallCnt] = g_myField[x][y];
+          int t = y-fallCnt;
+          g_myField[x][t] = g_myField[x][y];
           g_myField[x][y] = EMPTY;
-          g_chainCheckHorizontal[y-fallCnt] = g_checkId;
+          g_chainCheckHorizontal[t] = g_checkId;
           g_chainCheckVertical[x] = g_checkId;
 
-          if (x - (y-fallCnt) >= 0) {
-            g_chainCheckRightUpH[x - (y-fallCnt) + 1] = g_checkId;
+          if (x-t >= 0) {
+            g_chainCheckRightUpH[x-t+1] = g_checkId;
           }
-          if ((y-fallCnt) - x >= 0) {
-            g_chainCheckRightUpV[(y-fallCnt) - x + 1] = g_checkId;
+          if (t-x >= 0) {
+            g_chainCheckRightUpV[t-x+1] = g_checkId;
           }
-          if ((y-fallCnt) + x <= HEIGHT) {
-            g_chainCheckRightDownV[(y-fallCnt) + x - 1] = g_checkId;
+          if (t+x <= HEIGHT) {
+            g_chainCheckRightDownV[t+x-1] = g_checkId;
           }
         }
       }
@@ -525,12 +527,15 @@ public:
     int cnt = 0;
 
     for (int x = 1; x <= FIELD_WIDTH; x++) {
-      for (int y = 1; y < g_myPutPackLine[x]; y++) {
+      g_minDeleteHeight[x] = g_maxHeight;
+
+      for (int y = g_myPutPackLine[x]; y >= 1; y--) {
         cnt = g_packDeleteCount[x][y];
 
         if (cnt > 0) {
           g_myField[x][y] = EMPTY;
           deleteCnt += cnt;
+          g_minDeleteHeight[x] = y;
         }
       }
     }
