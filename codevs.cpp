@@ -557,8 +557,6 @@ public:
       if (sum < DELETED_SUM) {
         toX++;
 
-        if (toX > FIELD_WIDTH) break;
-
         if (sum == 0) {
           fromX = toX;
         }
@@ -654,7 +652,7 @@ public:
         toY++;
         toX++;
 
-        if (toX > FIELD_WIDTH || toY > g_maxHeight) break;
+        if (toY > g_maxHeight) break;
 
         if (sum == 0) {
           fromY = toY;
@@ -710,7 +708,7 @@ public:
         toY--;
         toX++;
 
-        if (toX > FIELD_WIDTH || toY < 0) break;
+        if (toY < 0) break;
 
         if (sum == 0) {
           fromY = toY;
