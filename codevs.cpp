@@ -421,6 +421,12 @@ public:
       value += WIN;
     }
 
+    for (int x = 1; x < FIELD_WIDTH; x++) {
+      if (abs(g_myPutPackLine[x] - g_myPutPackLine[x+1]) >= 4) {
+        value -= 5;
+      }
+    }
+
     if (chainCnt >= 3) {
       g_chain = true;
     }
