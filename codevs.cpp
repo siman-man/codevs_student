@@ -227,7 +227,7 @@ public:
 
             if (putPack(x, rot, pack)) {
               Node cand;
-              cand.value = simulate(depth) - abs(x - node.beforeX)/2;
+              cand.value = simulate() - abs(x - node.beforeX)/2;
               cand.chain = g_chain;
               cand.beforeX = x;
 
@@ -439,7 +439,7 @@ public:
    *
    * @param [int] 評価値
    */
-  int simulate(int depth) {
+  int simulate() {
     int chainCnt = 0;
     int value = 0;
     int score = 0;
