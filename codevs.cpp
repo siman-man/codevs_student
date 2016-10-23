@@ -293,18 +293,7 @@ public:
           int t = y-fallCnt;
           g_myField[x][t] = g_myField[x][y];
           g_myField[x][y] = EMPTY;
-          g_chainCheckHorizontal[t] = g_checkId;
-          g_chainCheckVertical[x] = g_checkId;
-
-          if (x-t >= 0) {
-            g_chainCheckRightUpH[x-t+1] = g_checkId;
-          }
-          if (t-x >= 0) {
-            g_chainCheckRightUpV[t-x+1] = g_checkId;
-          }
-          if (t+x <= HEIGHT) {
-            g_chainCheckRightDownV[t+x-1] = g_checkId;
-          }
+          setChainCheckId(t, x);
         }
       }
     }
@@ -370,37 +359,33 @@ public:
     if (t0 != EMPTY) {
       if (x < 1 || x > FIELD_WIDTH) return false;
       g_myField[x][y] = t0;
-      g_chainCheckHorizontal[y] = g_checkId;
-      g_chainCheckVertical[x] = g_checkId;
-      if (x-y >= 0) g_chainCheckRightUpH[x-y+1] = g_checkId;
-      if (y-x >= 0) g_chainCheckRightUpV[y-x+1] = g_checkId;
-      if (y+x <= HEIGHT) g_chainCheckRightDownV[y+x-1] = g_checkId;
+      setChainCheckId(y, x);
       y++;
     }
     if (t1 != EMPTY) {
       if (x < 1 || x > FIELD_WIDTH) return false;
       g_myField[x][y] = t1;
-      g_chainCheckHorizontal[y] = g_checkId;
-      g_chainCheckVertical[x] = g_checkId;
-      if (x-y >= 0) g_chainCheckRightUpH[x-y+1] = g_checkId;
-      if (y-x >= 0) g_chainCheckRightUpV[y-x+1] = g_checkId;
-      if (y+x <= HEIGHT) g_chainCheckRightDownV[y+x-1] = g_checkId;
+      setChainCheckId(y, x);
       y++;
     }
     if (t2 != EMPTY) {
       if (x < 1 || x > FIELD_WIDTH) return false;
       g_myField[x][y] = t2;
-      g_chainCheckHorizontal[y] = g_checkId;
-      g_chainCheckVertical[x] = g_checkId;
-      if (x-y >= 0) g_chainCheckRightUpH[x-y+1] = g_checkId;
-      if (y-x >= 0) g_chainCheckRightUpV[y-x+1] = g_checkId;
-      if (y+x <= HEIGHT) g_chainCheckRightDownV[y+x-1] = g_checkId;
+      setChainCheckId(y, x);
       y++;
     }
 
     assert(y <= HEIGHT);
     g_myPutPackLine[x] = y;
     return true;
+  }
+
+  void setChainCheckId(int y, int x) {
+    g_chainCheckHorizontal[y] = g_checkId;
+    g_chainCheckVertical[x] = g_checkId;
+    if (x-y >= 0) g_chainCheckRightUpH[x-y+1] = g_checkId;
+    if (y-x >= 0) g_chainCheckRightUpV[y-x+1] = g_checkId;
+    if (y+x <= HEIGHT) g_chainCheckRightDownV[y+x-1] = g_checkId;
   }
 
   /**
