@@ -388,6 +388,12 @@ public:
     return true;
   }
 
+  /**
+   * 連鎖判定が必要な場所にチェックを行う
+   *
+   * @param [int] y ブロックが落下したy座標
+   * @param [int] x ブロックが落下したx座標
+   */
   void setChainCheckId(int y, int x) {
     g_chainCheckHorizontal[y] = g_checkId;
     g_chainCheckVertical[x] = g_checkId;
@@ -398,6 +404,9 @@ public:
 
   /**
    * パックにお邪魔を埋め込む
+   *
+   * @param [int] turn 現在のターン
+   * @param [int] ojamaStock 現在のお邪魔のストック数
    */
   void fillOjama(int turn, int ojamaStock) {
     for (int t = turn; t <= min(MAX_TURN-1, (turn + SEARCH_DEPTH)) && ojamaStock > 0; t++) {
@@ -414,6 +423,8 @@ public:
 
   /**
    * ブロックからお邪魔を取り除く
+   *
+   * @param [int] turn 現在のターン
    */
   void cleanOjama(int turn) {
     for (int t = turn; t <= min(MAX_TURN-1, (turn + SEARCH_DEPTH)); t++) {
