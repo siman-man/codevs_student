@@ -51,9 +51,8 @@ int g_enemyField[WIDTH][HEIGHT]; // 敵フィールド
 
 int g_myPutPackLine[WIDTH]; // 次にブロックを設置する高さを保持する配列
 int g_enemyPutPackLine[WIDTH]; // 次にブロックを設置する高さを保持する配列
-int g_minDeleteHeight[WIDTH]; // 削除されたブロックの最低の高さを保存
 
-int g_packDeleteCount[WIDTH][HEIGHT];
+ll g_packDeleteCount[WIDTH][HEIGHT];
 
 int g_maxHeight;
 int g_beforeTime;
@@ -70,6 +69,9 @@ ll g_chainCheckRightUpH[WIDTH]; // 連鎖判定フィールド
 ll g_chainCheckRightUpV[HEIGHT]; // 連鎖判定フィールド
 ll g_chainCheckRightDownV[HEIGHT]; // 連鎖判定フィールド
 ll g_checkId;
+
+ll g_deleteId;
+int g_deleteCount;
 
 Pack g_packs[MAX_TURN]; // パック一覧
 
@@ -134,8 +136,10 @@ public:
     memset(g_chainCheckRightUpH, -1, sizeof(g_chainCheckRightUpH));
     memset(g_chainCheckRightUpV, -1, sizeof(g_chainCheckRightUpV));
     memset(g_chainCheckRightDownV, -1, sizeof(g_chainCheckRightDownV));
+    memset(g_packDeleteCount, -1, sizeof(g_packDeleteCount));
 
     g_checkId = 0;
+    g_deleteId = 0;
 
     for (int x = 0; x < WIDTH; x++) {
       for (int y = 0; y < HEIGHT; y++) {
@@ -281,12 +285,15 @@ public:
    * パックの落下処理
    */
   void fallPack() {
+    g_checkId++;
+
     for (int x = 1; x <= FIELD_WIDTH; x++) {
       int fallCnt = 0;
       int limitY = g_myPutPackLine[x];
 
-      for (int y = g_minDeleteHeight[x]; y < limitY; y++) {
-        if (g_myField[x][y] == EMPTY) {
+      for (int y = 1; y < limitY; y++) {
+        if (g_packDeleteCount[x][y] == g_deleteId) {
+          g_myField[x][y] = EMPTY;
           fallCnt++;
           g_myPutPackLine[x]--;
         } else if (fallCnt > 0) {
@@ -309,6 +316,7 @@ public:
    */
   bool putPack(int x, int rot, const Pack &pack) {
     bool success = true;
+    g_checkId++;
 
     switch (rot) {
       case 0:
@@ -432,18 +440,14 @@ public:
 
     while (true) {
       updateMaxHeight();
-      int deleteCount = chainPack();
+      chainPack();
+      fallPack();
 
-      if (deleteCount > 0) {
-        g_checkId++;
-        fallPack();
-        chainCnt++;
-      }
-
-      score += floor(pow(1.3, chainCnt) * (deleteCount/2));
-      value += floor(pow(1.5, chainCnt) * (deleteCount/2));
-
-      if (deleteCount == 0) break;
+      if (g_deleteCount == 0) break;
+      
+      chainCnt++;
+      score += floor(pow(1.3, chainCnt) * (g_deleteCount/2));
+      value += floor(pow(1.5, chainCnt) * (g_deleteCount/2));
     }
 
     if (score >= g_scoreLimit) {
@@ -465,11 +469,10 @@ public:
 
   /**
    * 連鎖判定を行う
-   *
-   * @return [int] 連鎖カウント
    */
-  int chainPack() {
-    memset(g_packDeleteCount, 0, sizeof(g_packDeleteCount));
+  void chainPack() {
+    g_deleteCount = 0;
+    g_deleteId++;
 
     for (int y = 1; y <= g_maxHeight; y++) {
       if (g_chainCheckHorizontal[y] == g_checkId) {
@@ -497,35 +500,6 @@ public:
       }
       deleteCheckDiagonalRightDown(g_maxHeight, x);
     }
-
-    int deleteCnt = deletePack();
-    return deleteCnt;
-  }
-
-  /**
-   * 連鎖判定で削除となったパックを消す
-   *
-   * @return [int] 削除カウント
-   */
-  int deletePack() {
-    int deleteCnt = 0;
-    int cnt = 0;
-
-    for (int x = 1; x <= FIELD_WIDTH; x++) {
-      g_minDeleteHeight[x] = g_maxHeight;
-
-      for (int y = g_myPutPackLine[x]; y >= 1; y--) {
-        cnt = g_packDeleteCount[x][y];
-
-        if (cnt > 0) {
-          g_myField[x][y] = EMPTY;
-          deleteCnt += cnt;
-          g_minDeleteHeight[x] = y;
-        }
-      }
-    }
-
-    return deleteCnt;
   }
 
   /**
@@ -566,8 +540,9 @@ public:
 
       if (sum == DELETED_SUM) {
         assert(0 <= fromX && toX < WIDTH);
+        g_deleteCount += (toX-fromX+1);
         for (int x = fromX; x <= toX; x++) {
-          g_packDeleteCount[x][y]++;
+          g_packDeleteCount[x][y] = g_deleteId;
         }
       }
     }
@@ -611,8 +586,9 @@ public:
       }
 
       if (sum == DELETED_SUM) {
+        g_deleteCount += (toY-fromY+1);
         for (int y = fromY; y <= toY; y++) {
-          g_packDeleteCount[x][y]++;
+          g_packDeleteCount[x][y] = g_deleteId;
         }
       }
     }
@@ -667,8 +643,9 @@ public:
       if (sum == DELETED_SUM) {
         int i = 0;
         assert(0 <= fromX && toX < WIDTH);
+        g_deleteCount += (toX-fromX+1);
         for (int x = fromX; x <= toX; x++) {
-          g_packDeleteCount[x][fromY+i]++;
+          g_packDeleteCount[x][fromY+i] = g_deleteId;
           i++;
         }
       }
@@ -721,8 +698,9 @@ public:
 
       if (sum == DELETED_SUM) {
         int i = 0;
+        g_deleteCount += (toX-fromX+1);
         for (int x = fromX; x <= toX; x++) {
-          g_packDeleteCount[x][fromY-i]++;
+          g_packDeleteCount[x][fromY-i] = g_deleteId;
           i++;
         }
       }
