@@ -454,10 +454,16 @@ public:
       value += WIN;
     }
 
-    for (int x = 1; x < FIELD_WIDTH; x++) {
-      if (abs(g_myPutPackLine[x] - g_myPutPackLine[x+1]) >= 4) {
+    if (g_myPutPackLine[2] - g_myPutPackLine[1] >= 4) {
+      value -= 5;
+    }
+    for (int x = 2; x < FIELD_WIDTH; x++) {
+      if (g_myPutPackLine[x-1] - g_myPutPackLine[x] >= 4 && g_myPutPackLine[x+1] - g_myPutPackLine[x] >= 4) {
         value -= 5;
       }
+    }
+    if (g_myPutPackLine[FIELD_WIDTH-1] - g_myPutPackLine[FIELD_WIDTH] >= 4) {
+      value -= 5;
     }
 
     if (chainCnt >= 3 || (depth > 0 && 1 <= chainCnt && chainCnt <= 2)) {
