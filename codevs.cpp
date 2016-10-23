@@ -23,9 +23,9 @@ const char OJAMA = 11; // お邪魔ブロック
 
 const int WIN = 9999999;
 
-int BASE_BEAM_WIDTH = 8000;
+int BASE_BEAM_WIDTH = 7000;
 int BEAM_WIDTH = 8000;
-int SEARCH_DEPTH = 4;
+int SEARCH_DEPTH = 5;
 int g_scoreLimit = 250;
 
 /**
@@ -227,7 +227,7 @@ public:
 
             if (putPack(x, rot, pack)) {
               Node cand;
-              cand.value = simulate() - abs(x - node.beforeX)/2;
+              cand.value = simulate(depth) - abs(x - node.beforeX)/2;
               cand.chain = g_chain;
               cand.beforeX = x;
 
@@ -424,7 +424,7 @@ public:
    *
    * @param [int] 評価値
    */
-  int simulate() {
+  int simulate(int depth) {
     int chainCnt = 0;
     int value = 0;
     int score = 0;
@@ -456,7 +456,7 @@ public:
       }
     }
 
-    if (chainCnt >= 3) {
+    if (chainCnt >= 3 || (depth > 0 && 1 <= chainCnt && chainCnt <= 2)) {
       g_chain = true;
     }
 
