@@ -392,8 +392,8 @@ public:
     g_chainCheckHorizontal[y] = g_checkId;
     g_chainCheckVertical[x] = g_checkId;
     if (x-y >= 0) g_chainCheckRightUpH[x-y+1] = g_checkId;
-    if (y-x >= 0) g_chainCheckRightUpV[y-x+1] = g_checkId;
-    if (y+x <= HEIGHT) g_chainCheckRightDownV[y+x-1] = g_checkId;
+    if (y-x > 0) g_chainCheckRightUpV[y-x+1] = g_checkId;
+    if (y+x < HEIGHT) g_chainCheckRightDownV[y+x-1] = g_checkId;
   }
 
   /**
@@ -444,7 +444,7 @@ public:
       fallPack();
 
       if (g_deleteCount == 0) break;
-      
+
       chainCnt++;
       score += floor(pow(1.3, chainCnt) * (g_deleteCount/2));
       value += floor(pow(1.5, chainCnt) * (g_deleteCount/2));
@@ -765,7 +765,7 @@ public:
     }
 
     if (enemyOjamaStock >= 40) {
-      g_scoreLimit = 100;
+      g_scoreLimit = 90;
       g_enemyPinch = true;
     }
 
