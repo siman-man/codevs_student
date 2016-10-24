@@ -462,7 +462,7 @@ public:
     }
 
     if (score >= g_scoreLimit) {
-      value += WIN;
+      value += WIN + 100 * score;
     }
 
     if (g_myPutPackLine[2] - g_myPutPackLine[1] >= 4) {
