@@ -231,7 +231,7 @@ public:
 
             if (putPack(x, rot, pack)) {
               Node cand;
-              cand.value = simulate(depth) - abs(x - node.beforeX)/2;
+              cand.value = simulate(depth);
               cand.chain = g_chain;
               cand.beforeX = x;
 
