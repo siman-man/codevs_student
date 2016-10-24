@@ -51,6 +51,7 @@ int g_enemyField[WIDTH][HEIGHT]; // 敵フィールド
 
 int g_myPutPackLine[WIDTH]; // 次にブロックを設置する高さを保持する配列
 int g_enemyPutPackLine[WIDTH]; // 次にブロックを設置する高さを保持する配列
+int g_tempPutPackLine[WIDTH]; // 一時保存用
 
 ll g_packDeleteCount[WIDTH][HEIGHT];
 
@@ -225,6 +226,7 @@ public:
         Node node = que.front(); que.pop();
         memcpy(g_myField, node.field, sizeof(node.field));
         updatePutPackLine();
+        memcpy(g_tempPutPackLine, g_myPutPackLine, sizeof(g_myPutPackLine));
 
         for (int x = -1; x <= FIELD_WIDTH; x++) {
           for (int rot = 0; rot < 4; rot++) {
@@ -248,7 +250,7 @@ public:
             }
 
             memcpy(g_myField, node.field, sizeof(node.field));
-            updatePutPackLine();
+            memcpy(g_myPutPackLine, g_tempPutPackLine, sizeof(g_tempPutPackLine));
           }
         }
       }
