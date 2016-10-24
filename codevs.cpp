@@ -23,9 +23,9 @@ const char OJAMA = 11; // お邪魔ブロック
 
 const int WIN = 9999999;
 
-int BASE_BEAM_WIDTH = 7000;
+int BASE_BEAM_WIDTH = 5000;
 int BEAM_WIDTH = 8000;
-int SEARCH_DEPTH = 5;
+int SEARCH_DEPTH = 6;
 int g_scoreLimit = 250;
 
 /**
