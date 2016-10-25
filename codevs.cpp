@@ -265,7 +265,7 @@ public:
             return node.command;
           }
 
-          if (maxValue < node.value && depth > 0) {
+          if (maxValue < node.value) {
             maxValue = node.value;
             bestCommand = node.command;
           }
@@ -735,14 +735,20 @@ public:
     int bonus = 0;
     char num = g_myField[x][y];
 
+    if (y >= 4) {
+      if (num + g_myField[x][y-3] == DELETED_SUM) bonus += 3;
+      if (num + g_myField[x-1][y-3] == DELETED_SUM) bonus += 5;
+      if (num + g_myField[x+1][y-3] == DELETED_SUM) bonus += 5;
+    }
     if (y >= 3) {
-      if (num + g_myField[x][y-2] == DELETED_SUM) bonus += 3;
-      if (num + g_myField[x-1][y-2] == DELETED_SUM) bonus += 5;
-      if (num + g_myField[x+1][y-2] == DELETED_SUM) bonus += 5;
+      if (num + g_myField[x][y-2] == DELETED_SUM) bonus += 6;
+      if (num + g_myField[x-1][y-2] == DELETED_SUM) bonus += 9;
+      if (num + g_myField[x+1][y-2] == DELETED_SUM) bonus += 9;
     }
     if (y >= 2) {
-      if (g_myField[x-1][y-1] != EMPTY && (num + g_myField[x-1][y-1] + g_myField[x-2][y-1]) == DELETED_SUM) bonus += 3;
-      if (g_myField[x+1][y-1] != EMPTY && (num + g_myField[x-1][y+1] + g_myField[x-2][y+1]) == DELETED_SUM) bonus += 3;
+      if (g_myField[x-1][y-1] != EMPTY && g_myField[x-2][y-1] != EMPTY && (num + g_myField[x-1][y-1] + g_myField[x-2][y-1]) == DELETED_SUM) bonus += 5;
+      if (g_myField[x-1][y-1] != EMPTY && g_myField[x+1][y-1] != EMPTY && (num + g_myField[x-1][y-1] + g_myField[x+1][y-1]) == DELETED_SUM) bonus += 7;
+      if (g_myField[x+1][y-1] != EMPTY && g_myField[x+2][y-1] != EMPTY && (num + g_myField[x+1][y-1] + g_myField[x+2][y-1]) == DELETED_SUM) bonus += 5;
     }
 
     return bonus;
@@ -776,7 +782,7 @@ public:
     int myRemainTime;
     cin >> myRemainTime;
 
-    if (myRemainTime > 100000) {
+    if (myRemainTime > 90000) {
       BEAM_WIDTH = 3 * BASE_BEAM_WIDTH;
     } else if (myRemainTime < 60000) {
       BEAM_WIDTH = BASE_BEAM_WIDTH / 2;
@@ -819,8 +825,11 @@ public:
       }
     }
 
-    if (enemyOjamaStock >= 40) {
+    if (ojamaCnt >= 50) {
       g_scoreLimit = 90;
+    }
+    if (ojamaCnt >= 25) {
+      g_scoreLimit = 120;
       g_enemyPinch = true;
     }
 
