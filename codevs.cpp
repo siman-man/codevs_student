@@ -23,9 +23,9 @@ const char OJAMA = 11; // お邪魔ブロック
 
 const int WIN = 9999999;
 
-int BASE_BEAM_WIDTH = 5000;
+int BASE_BEAM_WIDTH = 1000;
 int BEAM_WIDTH = 8000;
-int SEARCH_DEPTH = 6;
+int SEARCH_DEPTH = 8;
 int g_scoreLimit = 250;
 
 /**
@@ -372,21 +372,18 @@ public:
     if (t0 != EMPTY) {
       if (x < 1 || x > FIELD_WIDTH) return false;
       g_myField[x][y] = t0;
-      g_putBonus += simpleFilter(y, x);
       setChainCheckId(y, x);
       y++;
     }
     if (t1 != EMPTY) {
       if (x < 1 || x > FIELD_WIDTH) return false;
       g_myField[x][y] = t1;
-      g_putBonus += simpleFilter(y, x);
       setChainCheckId(y, x);
       y++;
     }
     if (t2 != EMPTY) {
       if (x < 1 || x > FIELD_WIDTH) return false;
       g_myField[x][y] = t2;
-      g_putBonus += simpleFilter(y, x);
       setChainCheckId(y, x);
       y++;
     }
@@ -473,9 +470,7 @@ public:
       value += WIN + 100 * score;
     }
 
-    if (chainCnt == 0) {
-      value += g_putBonus;
-    }
+    value += evaluateField();
 
     if (g_myPutPackLine[2] - g_myPutPackLine[1] >= 4) {
       value -= 5;
@@ -489,7 +484,7 @@ public:
       value -= 5;
     }
 
-    if (chainCnt >= 3 || (depth > 0 && 1 <= chainCnt && chainCnt <= 2)) {
+    if (chainCnt >= 3 || (depth > 0 && 2 <= chainCnt && chainCnt <= 2)) {
       g_chain = true;
     }
 
@@ -745,10 +740,23 @@ public:
       if (num + g_myField[x-1][y-2] == DELETED_SUM) bonus += 5;
       if (num + g_myField[x+1][y-2] == DELETED_SUM) bonus += 5;
     }
-    if (y <= DANGER_LINE) {
-      if (num + g_myField[x][y+2] == DELETED_SUM) bonus += 3;
-      if (num + g_myField[x-1][y+2] == DELETED_SUM) bonus += 5;
-      if (num + g_myField[x+1][y+2] == DELETED_SUM) bonus += 5;
+    if (y >= 2) {
+      if (g_myField[x-1][y-1] != EMPTY && (num + g_myField[x-1][y-1] + g_myField[x-2][y-1]) == DELETED_SUM) bonus += 3;
+      if (g_myField[x+1][y-1] != EMPTY && (num + g_myField[x-1][y+1] + g_myField[x-2][y+1]) == DELETED_SUM) bonus += 3;
+    }
+
+    return bonus;
+  }
+
+  int evaluateField() {
+    int bonus = 0;
+
+    for (int x = 1; x <= FIELD_WIDTH; x++) {
+      for (int y = 2; y <= g_maxHeight; y++) {
+        if (g_myField[x][y] != EMPTY) {
+          bonus += simpleFilter(y, x);
+        }
+      }
     }
 
     return bonus;
