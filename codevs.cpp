@@ -62,6 +62,8 @@ int g_myOjamaStock;
 bool g_chain;
 bool g_enemyPinch;
 
+int g_putBonus;
+
 ll g_zoblishField[WIDTH][HEIGHT][12]; // zoblish hash生成用の乱数テーブル
 
 ll g_chainCheckHorizontal[HEIGHT]; // 連鎖判定フィールド
@@ -318,6 +320,7 @@ public:
    */
   bool putPack(int x, int rot, const Pack &pack) {
     bool success = true;
+    g_putBonus = 0;
     g_checkId++;
 
     switch (rot) {
@@ -369,18 +372,21 @@ public:
     if (t0 != EMPTY) {
       if (x < 1 || x > FIELD_WIDTH) return false;
       g_myField[x][y] = t0;
+      g_putBonus += simpleFilter(y, x);
       setChainCheckId(y, x);
       y++;
     }
     if (t1 != EMPTY) {
       if (x < 1 || x > FIELD_WIDTH) return false;
       g_myField[x][y] = t1;
+      g_putBonus += simpleFilter(y, x);
       setChainCheckId(y, x);
       y++;
     }
     if (t2 != EMPTY) {
       if (x < 1 || x > FIELD_WIDTH) return false;
       g_myField[x][y] = t2;
+      g_putBonus += simpleFilter(y, x);
       setChainCheckId(y, x);
       y++;
     }
@@ -460,11 +466,15 @@ public:
 
       chainCnt++;
       score += floor(pow(1.3, chainCnt) * (g_deleteCount/2));
-      value += floor(pow(1.5, chainCnt) * (g_deleteCount/2));
+      value += floor(pow(1.6, chainCnt) * (g_deleteCount/2));
     }
 
     if (score >= g_scoreLimit) {
       value += WIN + 100 * score;
+    }
+
+    if (chainCnt == 0) {
+      value += g_putBonus;
     }
 
     if (g_myPutPackLine[2] - g_myPutPackLine[1] >= 4) {
@@ -724,6 +734,24 @@ public:
         }
       }
     }
+  }
+
+  int simpleFilter(int y, int x) {
+    int bonus = 0;
+    char num = g_myField[x][y];
+
+    if (y >= 3) {
+      if (num + g_myField[x][y-2] == DELETED_SUM) bonus += 3;
+      if (num + g_myField[x-1][y-2] == DELETED_SUM) bonus += 5;
+      if (num + g_myField[x+1][y-2] == DELETED_SUM) bonus += 5;
+    }
+    if (y <= DANGER_LINE) {
+      if (num + g_myField[x][y+2] == DELETED_SUM) bonus += 3;
+      if (num + g_myField[x-1][y+2] == DELETED_SUM) bonus += 5;
+      if (num + g_myField[x+1][y+2] == DELETED_SUM) bonus += 5;
+    }
+
+    return bonus;
   }
 
   /**
