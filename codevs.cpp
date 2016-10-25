@@ -753,7 +753,7 @@ public:
 
     for (int x = 1; x <= FIELD_WIDTH; x++) {
       for (int y = 2; y <= g_maxHeight; y++) {
-        if (g_myField[x][y] != EMPTY) {
+        if (g_myField[x][y] != EMPTY && g_myField[y][x] != OJAMA) {
           bonus += simpleFilter(y, x);
         }
       }
@@ -776,7 +776,7 @@ public:
     int myRemainTime;
     cin >> myRemainTime;
 
-    if (myRemainTime > 120000) {
+    if (myRemainTime > 100000) {
       BEAM_WIDTH = 3 * BASE_BEAM_WIDTH;
     } else if (myRemainTime < 60000) {
       BEAM_WIDTH = BASE_BEAM_WIDTH / 2;
