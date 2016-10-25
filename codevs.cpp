@@ -753,7 +753,7 @@ public:
 
     for (int x = 1; x <= FIELD_WIDTH; x++) {
       for (int y = 2; y <= g_maxHeight; y++) {
-        if (g_myField[x][y] != EMPTY && g_myField[y][x] != OJAMA) {
+        if (g_myField[x][y] != EMPTY && g_myField[x][y] != OJAMA) {
           bonus += simpleFilter(y, x);
         }
       }
