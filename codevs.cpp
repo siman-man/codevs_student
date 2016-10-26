@@ -25,8 +25,8 @@ const int WIN = 9999999;
 
 int BASE_BEAM_WIDTH = 1000;
 int BEAM_WIDTH = 8000;
-int SEARCH_DEPTH = 8;
-int g_scoreLimit = 250;
+int SEARCH_DEPTH = 10;
+int g_scoreLimit = 300;
 
 /**
  * 乱数生成器
@@ -484,7 +484,7 @@ public:
       value -= 5;
     }
 
-    if (chainCnt >= 3 || (depth > 0 && 2 <= chainCnt && chainCnt <= 2)) {
+    if (chainCnt >= 2 || (depth > 0 && 1 <= chainCnt && chainCnt <= 2)) {
       g_chain = true;
     }
 
