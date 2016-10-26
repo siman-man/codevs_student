@@ -462,8 +462,8 @@ public:
       if (g_deleteCount == 0) break;
 
       chainCnt++;
-      score += floor(pow(1.3, chainCnt) * (g_deleteCount/2));
-      value += floor(pow(1.6, chainCnt) * (g_deleteCount/2));
+      score += floor(pow(1.3, chainCnt)) * (g_deleteCount/2);
+      value += floor(pow(1.6, chainCnt)) * (g_deleteCount/2);
     }
 
     if (score >= g_scoreLimit) {
