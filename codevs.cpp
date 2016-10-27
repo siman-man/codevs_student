@@ -48,6 +48,7 @@ struct Pack {
 
 char g_myField[WIDTH][HEIGHT]; // 自フィールド
 int g_enemyField[WIDTH][HEIGHT]; // 敵フィールド
+char g_field[WIDTH][HEIGHT]; // フィールド
 
 int g_myPutPackLine[WIDTH]; // 次にブロックを設置する高さを保持する配列
 int g_enemyPutPackLine[WIDTH]; // 次にブロックを設置する高さを保持する配列
@@ -134,6 +135,7 @@ public:
 
     memset(g_myField, EMPTY, sizeof(g_myField));
     memset(g_enemyField, EMPTY, sizeof(g_enemyField));
+    memset(g_field, EMPTY, sizeof(g_field));
     memset(g_chainCheckHorizontal, -1, sizeof(g_chainCheckHorizontal));
     memset(g_chainCheckVertical, -1, sizeof(g_chainCheckVertical));
     memset(g_chainCheckRightUpH, -1, sizeof(g_chainCheckRightUpH));
@@ -195,6 +197,7 @@ public:
       fillOjama(turn, g_myOjamaStock);
     }
 
+    memcpy(g_field, g_myField, sizeof(g_myField));
     Command command = getBestCommand(turn);
     cout << command.pos-1 << " " << command.rot << endl;
     fflush(stderr);
@@ -211,7 +214,7 @@ public:
    */
   Command getBestCommand(int turn) {
     Node root;
-    memcpy(root.field, g_myField, sizeof(g_myField));
+    memcpy(root.field, g_field, sizeof(g_field));
     Command bestCommand;
     int maxValue = -9999;
 
@@ -226,7 +229,7 @@ public:
 
       while (!que.empty()) {
         Node node = que.front(); que.pop();
-        memcpy(g_myField, node.field, sizeof(node.field));
+        memcpy(g_field, node.field, sizeof(node.field));
         updatePutPackLine();
         memcpy(g_tempPutPackLine, g_myPutPackLine, sizeof(g_myPutPackLine));
 
@@ -246,12 +249,12 @@ public:
               }
 
               if (g_maxHeight < DANGER_LINE) {
-                memcpy(cand.field, g_myField, sizeof(g_myField));
+                memcpy(cand.field, g_field, sizeof(g_field));
                 pque.push(cand);
               }
             }
 
-            memcpy(g_myField, node.field, sizeof(node.field));
+            memcpy(g_field, node.field, sizeof(node.field));
             memcpy(g_myPutPackLine, g_tempPutPackLine, sizeof(g_tempPutPackLine));
           }
         }
@@ -297,13 +300,13 @@ public:
 
       for (int y = 1; y < limitY; y++) {
         if (g_packDeleteCount[x][y] == g_deleteId) {
-          g_myField[x][y] = EMPTY;
+          g_field[x][y] = EMPTY;
           fallCnt++;
           g_myPutPackLine[x]--;
         } else if (fallCnt > 0) {
           int t = y-fallCnt;
-          g_myField[x][t] = g_myField[x][y];
-          g_myField[x][y] = EMPTY;
+          g_field[x][t] = g_field[x][y];
+          g_field[x][y] = EMPTY;
           setChainCheckId(t, x);
         }
       }
@@ -371,19 +374,19 @@ public:
 
     if (t0 != EMPTY) {
       if (x < 1 || x > FIELD_WIDTH) return false;
-      g_myField[x][y] = t0;
+      g_field[x][y] = t0;
       setChainCheckId(y, x);
       y++;
     }
     if (t1 != EMPTY) {
       if (x < 1 || x > FIELD_WIDTH) return false;
-      g_myField[x][y] = t1;
+      g_field[x][y] = t1;
       setChainCheckId(y, x);
       y++;
     }
     if (t2 != EMPTY) {
       if (x < 1 || x > FIELD_WIDTH) return false;
-      g_myField[x][y] = t2;
+      g_field[x][y] = t2;
       setChainCheckId(y, x);
       y++;
     }
@@ -532,7 +535,7 @@ public:
   void deleteCheckHorizontal(int y) {
     int fromX = 1;
     int toX = 1;
-    char sum = g_myField[toX][y];
+    char sum = g_field[toX][y];
 
     while (toX <= FIELD_WIDTH) {
       if (sum < DELETED_SUM) {
@@ -542,7 +545,7 @@ public:
           fromX = toX;
         }
 
-        char num = g_myField[toX][y];
+        char num = g_field[toX][y];
 
         if (num == EMPTY || num == OJAMA) {
           sum = 0;
@@ -550,13 +553,13 @@ public:
           sum += num;
         }
       } else {
-        assert(g_myField[fromX][y] != EMPTY);
-        sum -= g_myField[fromX][y];
+        assert(g_field[fromX][y] != EMPTY);
+        sum -= g_field[fromX][y];
         fromX++;
 
         if (fromX > toX) {
           toX = fromX;
-          sum = g_myField[toX][y];
+          sum = g_field[toX][y];
         }
       }
 
@@ -578,7 +581,7 @@ public:
   void deleteCheckVertical(int x) {
     int fromY = 1;
     int toY = 1;
-    char sum = g_myField[x][toY];
+    char sum = g_field[x][toY];
 
     while (toY < HEIGHT) {
       if (sum < DELETED_SUM) {
@@ -589,7 +592,7 @@ public:
           fromY = toY;
         }
 
-        char num = g_myField[x][toY];
+        char num = g_field[x][toY];
         if (num == EMPTY) break;
 
         if (num == OJAMA) {
@@ -598,12 +601,12 @@ public:
           sum += num;
         }
       } else {
-        sum -= g_myField[x][fromY];
+        sum -= g_field[x][fromY];
         fromY++;
 
         if (fromY > toY) {
           toY = fromY;
-          sum = g_myField[x][toY];
+          sum = g_field[x][toY];
         }
       }
 
@@ -627,7 +630,7 @@ public:
     int fromX = sx;
     int toY = sy;
     int toX = sx;
-    char sum = g_myField[toX][toY];
+    char sum = g_field[toX][toY];
 
     while (toX <= FIELD_WIDTH && toY <= g_maxHeight) {
 
@@ -642,7 +645,7 @@ public:
           fromX = toX;
         }
 
-        char num = g_myField[toX][toY];
+        char num = g_field[toX][toY];
 
         if (num == EMPTY || num == OJAMA) {
           sum = 0;
@@ -650,15 +653,15 @@ public:
           sum += num;
         }
       } else {
-        assert(g_myField[fromX][fromY] != EMPTY);
-        sum -= g_myField[fromX][fromY];
+        assert(g_field[fromX][fromY] != EMPTY);
+        sum -= g_field[fromX][fromY];
         fromY++;
         fromX++;
 
         if (fromX > toX) {
           toX = fromX;
           toY = fromY;
-          sum = g_myField[toX][toY];
+          sum = g_field[toX][toY];
         }
       }
 
@@ -685,7 +688,7 @@ public:
     int fromX = sx;
     int toY = sy;
     int toX = sx;
-    char sum = g_myField[toX][toY];
+    char sum = g_field[toX][toY];
 
     while (toX <= FIELD_WIDTH && toY >= 1) {
       if (sum < DELETED_SUM) {
@@ -699,7 +702,7 @@ public:
           fromX = toX;
         }
 
-        int num = g_myField[toX][toY];
+        int num = g_field[toX][toY];
 
         if (num == EMPTY || num == OJAMA) {
           sum = 0;
@@ -707,14 +710,14 @@ public:
           sum += num;
         }
       } else {
-        sum -= g_myField[fromX][fromY];
+        sum -= g_field[fromX][fromY];
         fromY--;
         fromX++;
 
         if (fromX > toX) {
           toY = fromY;
           toX = fromX;
-          sum = g_myField[toX][toY];
+          sum = g_field[toX][toY];
         }
       }
 
@@ -731,22 +734,22 @@ public:
 
   int simpleFilter(int y, int x) {
     int bonus = 0;
-    char num = g_myField[x][y];
+    char num = g_field[x][y];
 
     if (y >= 4) {
-      if (num + g_myField[x][y-3] == DELETED_SUM) bonus += 3;
-      if (num + g_myField[x-1][y-3] == DELETED_SUM) bonus += 5;
-      if (num + g_myField[x+1][y-3] == DELETED_SUM) bonus += 5;
+      if (num + g_field[x][y-3] == DELETED_SUM) bonus += 3;
+      if (num + g_field[x-1][y-3] == DELETED_SUM) bonus += 5;
+      if (num + g_field[x+1][y-3] == DELETED_SUM) bonus += 5;
     }
     if (y >= 3) {
-      if (num + g_myField[x][y-2] == DELETED_SUM) bonus += 6;
-      if (num + g_myField[x-1][y-2] == DELETED_SUM) bonus += 9;
-      if (num + g_myField[x+1][y-2] == DELETED_SUM) bonus += 9;
+      if (num + g_field[x][y-2] == DELETED_SUM) bonus += 6;
+      if (num + g_field[x-1][y-2] == DELETED_SUM) bonus += 9;
+      if (num + g_field[x+1][y-2] == DELETED_SUM) bonus += 9;
     }
     if (y >= 2) {
-      if (g_myField[x-1][y-1] != EMPTY && g_myField[x-2][y-1] != EMPTY && (num + g_myField[x-1][y-1] + g_myField[x-2][y-1]) == DELETED_SUM) bonus += 5;
-      if (g_myField[x-1][y-1] != EMPTY && g_myField[x+1][y-1] != EMPTY && (num + g_myField[x-1][y-1] + g_myField[x+1][y-1]) == DELETED_SUM) bonus += 7;
-      if (g_myField[x+1][y-1] != EMPTY && g_myField[x+2][y-1] != EMPTY && (num + g_myField[x+1][y-1] + g_myField[x+2][y-1]) == DELETED_SUM) bonus += 5;
+      if (g_field[x-1][y-1] != EMPTY && g_field[x-2][y-1] != EMPTY && (num + g_field[x-1][y-1] + g_field[x-2][y-1]) == DELETED_SUM) bonus += 5;
+      if (g_field[x-1][y-1] != EMPTY && g_field[x+1][y-1] != EMPTY && (num + g_field[x-1][y-1] + g_field[x+1][y-1]) == DELETED_SUM) bonus += 7;
+      if (g_field[x+1][y-1] != EMPTY && g_field[x+2][y-1] != EMPTY && (num + g_field[x+1][y-1] + g_field[x+2][y-1]) == DELETED_SUM) bonus += 5;
     }
 
     return bonus;
@@ -757,7 +760,7 @@ public:
 
     for (int x = 1; x <= FIELD_WIDTH; x++) {
       for (int y = 2; y < g_myPutPackLine[x]; y++) {
-        if (g_myField[x][y] != OJAMA) {
+        if (g_field[x][y] != OJAMA) {
           bonus += simpleFilter(y, x);
         }
       }
@@ -849,7 +852,7 @@ public:
   void setPutPackLine(int x) {
     int y = 1;
 
-    while (g_myField[x][y] != EMPTY && y < HEIGHT-1) {
+    while (g_field[x][y] != EMPTY && y < HEIGHT-1) {
       y++;
     }
 
@@ -875,10 +878,10 @@ public:
     fprintf(stderr,"\n");
     for (int x = 0; x < WIDTH; x++) {
       for (int y = 0; y < HEIGHT; y++) {
-        if (g_myField[x][y] == 11) {
+        if (g_field[x][y] == 11) {
           fprintf(stderr,"B");
         } else {
-          fprintf(stderr,"%d", g_myField[x][y]);
+          fprintf(stderr,"%d", g_field[x][y]);
         }
       }
       fprintf(stderr," %d\n", g_myPutPackLine[x]);
