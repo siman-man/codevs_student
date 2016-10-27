@@ -403,7 +403,7 @@ public:
     g_chainCheckHorizontal[y] = g_checkId;
     g_chainCheckVertical[x] = g_checkId;
     if (x-y >= 0) g_chainCheckRightUpH[x-y+1] = g_checkId;
-    if (y-x > 0) g_chainCheckRightUpV[y-x+1] = g_checkId;
+    if (x-y < 0) g_chainCheckRightUpV[y-x+1] = g_checkId;
     if (y+x < HEIGHT) g_chainCheckRightDownV[y+x-1] = g_checkId;
   }
 
@@ -503,12 +503,10 @@ public:
         deleteCheckHorizontal(y);
       }
     }
-    for (int y = 1; y < g_maxHeight; y++) {
+    for (int y = 2; y < g_maxHeight; y++) {
       if (g_chainCheckRightUpV[y] == g_checkId) {
         deleteCheckDiagonalRightUp(y, 1);
       }
-    }
-    for (int y = 2; y <= g_maxHeight; y++) {
       if (g_chainCheckRightDownV[y] == g_checkId) {
         deleteCheckDiagonalRightDown(y, 1);
       }
