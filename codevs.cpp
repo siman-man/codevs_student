@@ -890,11 +890,10 @@ public:
    * フィールドの最大の高さと最低の高さを更新する
    */
   void updateMaxHeight() {
-    g_maxHeight = 1 ;
+    g_maxHeight = 0;
 
     for (int x = 1; x <= FIELD_WIDTH; x++) {
-      int y = g_myPutPackLine[x];
-      g_maxHeight = max(g_maxHeight, y-1);
+      g_maxHeight = max(g_maxHeight, g_myPutPackLine[x]-1);
     }
   }
 
