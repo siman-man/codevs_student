@@ -190,6 +190,13 @@ public:
       pack.t[6] = t6; pack.t[7] = t7; pack.t[8] = t8;
 
       g_packs[i] = pack;
+      g_ojamaPacks[i] = pack;
+
+      for (int j = 0; j < 9; j++) {
+        if (g_ojamaPacks[i].t[j] == EMPTY) {
+          g_ojamaPacks[i].t[j] = OJAMA;
+        }
+      }
 
       cin >> _end_;
     }
