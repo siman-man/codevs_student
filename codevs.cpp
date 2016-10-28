@@ -279,12 +279,7 @@ public:
               cand.result = simulate(depth);
               cand.chain = g_chain;
               cand.beforeX = x;
-
-              if (depth == 0) {
-                cand.command = Command(x, rot);
-              } else {
-                cand.command = node.command;
-              }
+              cand.command = (depth == 0)? Command(x, rot) : node.command;
 
               if (g_maxHeight < DANGER_LINE) {
                 memcpy(cand.field, g_field, sizeof(g_field));
