@@ -100,6 +100,16 @@ struct Result {
   }
 };
 
+struct BestAction {
+  Command command;
+  Result result;
+
+  BestAction(Command command = Command(), Result result = Result()) {
+    this->command = command;
+    this->result = result;
+  }
+};
+
 struct Node {
   Result result;
   int beforeX;
@@ -216,7 +226,9 @@ public:
     }
 
     memcpy(g_field, g_myField, sizeof(g_myField));
-    Command command = getBestCommand(turn);
+    BestAction action = getBestAction(turn);
+    Command command = action.command;
+
     cout << command.pos-1 << " " << command.rot << endl;
     fflush(stderr);
 
@@ -229,11 +241,12 @@ public:
    * 一番良い操作を取得する
    *
    * @param [int] turn 今現在のターン
+   * @param [bool] attackMode 攻撃時の探索（初手はそのまま、2手目以降はお邪魔ブロック）
    */
-  Command getBestCommand(int turn) {
+   BestAction getBestAction(int turn, bool attackMode = false) {
     Node root;
     memcpy(root.field, g_field, sizeof(g_field));
-    Command bestCommand;
+    BestAction bestAction;
     int maxValue = -9999;
 
     queue<Node> que;
@@ -243,7 +256,7 @@ public:
 
     for (int depth = 0; depth < SEARCH_DEPTH; depth++) {
       priority_queue<Node, vector<Node>, greater<Node> > pque;
-      Pack pack = g_packs[turn + depth];
+      Pack pack = (depth > 0 && attackMode)? g_ojamaPacks[turn + depth] : g_packs[turn + depth];
 
       while (!que.empty()) {
         Node node = que.front(); que.pop();
@@ -283,12 +296,12 @@ public:
           Node node = pque.top(); pque.pop();
 
           if (node.result.value >= WIN) {
-            return node.command;
+            return BestAction(node.command, node.result);
           }
 
           if (maxValue < node.result.value) {
             maxValue = node.result.value;
-            bestCommand = node.command;
+            bestAction = BestAction(node.command, node.result);
           }
 
           ll hash = node.hashCode();
@@ -303,7 +316,7 @@ public:
       }
     }
 
-    return bestCommand;
+    return bestAction;
   }
 
   /**
