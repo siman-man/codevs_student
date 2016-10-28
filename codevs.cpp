@@ -225,8 +225,7 @@ public:
       fillOjama(turn, g_myOjamaStock);
     }
 
-    memcpy(g_field, g_myField, sizeof(g_myField));
-    BestAction action = getBestAction(turn);
+    BestAction action = getMyBestAction(turn);
     Command command = action.command;
 
     cout << command.pos-1 << " " << command.rot << endl;
@@ -235,6 +234,16 @@ public:
     if (g_myOjamaStock > 0) {
       cleanOjama(turn);
     }
+  }
+
+  /**
+   * 自分のベストなコマンドを選択する
+   *
+   * @return [BestAction] 一番良いアクション
+   */
+  BestAction getMyBestAction(int turn) {
+    memcpy(g_field, g_myField, sizeof(g_myField));
+    return getBestAction(turn);
   }
 
   /**
