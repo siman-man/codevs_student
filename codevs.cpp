@@ -47,7 +47,7 @@ struct Pack {
 };
 
 char g_myField[WIDTH][HEIGHT]; // 自フィールド
-int g_enemyField[WIDTH][HEIGHT]; // 敵フィールド
+char g_enemyField[WIDTH][HEIGHT]; // 敵フィールド
 char g_field[WIDTH][HEIGHT]; // フィールド
 
 int g_myPutPackLine[WIDTH]; // 次にブロックを設置する高さを保持する配列
