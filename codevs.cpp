@@ -298,19 +298,19 @@ public:
         }
       }
 
-      if (depth < SEARCH_DEPTH) {
-        for (int j = 0; j < BEAM_WIDTH && !pque.empty(); j++) {
-          Node node = pque.top(); pque.pop();
+      for (int j = 0; j < BEAM_WIDTH && !pque.empty(); j++) {
+        Node node = pque.top(); pque.pop();
 
-          if (node.result.value >= WIN) {
-            return BestAction(node.command, node.result);
-          }
+        if (node.result.value >= WIN) {
+          return BestAction(node.command, node.result);
+        }
 
-          if (maxValue < node.result.value) {
-            maxValue = node.result.value;
-            bestAction = BestAction(node.command, node.result);
-          }
+        if (maxValue < node.result.value) {
+          maxValue = node.result.value;
+          bestAction = BestAction(node.command, node.result);
+        }
 
+        if (depth < SEARCH_DEPTH-1) {
           ll hash = node.hashCode();
 
           if (!checkNodeList[hash] && !node.chain) {
