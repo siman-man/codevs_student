@@ -782,6 +782,11 @@ public:
     return bonus;
   }
 
+  /**
+   * 盤面の評価を行う
+   *
+   * @return [int] 盤面の評価値
+   */
   int evaluateField() {
     int bonus = 0;
 
