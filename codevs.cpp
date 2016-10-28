@@ -63,8 +63,6 @@ int g_myOjamaStock;
 bool g_chain;
 bool g_enemyPinch;
 
-int g_putBonus;
-
 ll g_zoblishField[WIDTH][HEIGHT][12]; // zoblish hash生成用の乱数テーブル
 
 ll g_chainCheckHorizontal[HEIGHT]; // 連鎖判定フィールド
@@ -363,7 +361,6 @@ public:
    */
   bool putPack(int x, int rot, const Pack &pack) {
     bool success = true;
-    g_putBonus = 0;
     g_checkId++;
 
     switch (rot) {
