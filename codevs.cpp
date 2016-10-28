@@ -539,27 +539,17 @@ public:
     g_deleteId++;
 
     for (int y = 1; y <= g_maxHeight; y++) {
-      if (g_chainCheckHorizontal[y] == g_checkId) {
-        deleteCheckHorizontal(y);
-      }
+      if (g_chainCheckHorizontal[y] == g_checkId) deleteCheckHorizontal(y);
     }
     for (int y = 2; y < g_maxHeight; y++) {
-      if (g_chainCheckRightUpV[y] == g_checkId) {
-        deleteCheckDiagonalRightUp(y, 1);
-      }
-      if (g_chainCheckRightDownV[y] == g_checkId) {
-        deleteCheckDiagonalRightDown(y, 1);
-      }
+      if (g_chainCheckRightUpV[y] == g_checkId) deleteCheckDiagonalRightUp(y, 1);
+      if (g_chainCheckRightDownV[y] == g_checkId) deleteCheckDiagonalRightDown(y, 1);
     }
     for (int x = 1; x <= FIELD_WIDTH; x++) {
-      if (g_chainCheckVertical[x] == g_checkId) {
-        deleteCheckVertical(x);
-      }
+      if (g_chainCheckVertical[x] == g_checkId) deleteCheckVertical(x);
     }
     for (int x = 1; x < FIELD_WIDTH; x++) {
-      if (g_chainCheckRightUpH[x] == g_checkId) {
-        deleteCheckDiagonalRightUp(1, x);
-      }
+      if (g_chainCheckRightUpH[x] == g_checkId) deleteCheckDiagonalRightUp(1, x);
       deleteCheckDiagonalRightDown(g_maxHeight, x);
     }
   }
