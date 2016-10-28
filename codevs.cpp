@@ -330,7 +330,7 @@ public:
    * パックの落下処理と削除処理を行う
    */
   void fallPack() {
-    g_checkId++;
+    ++g_checkId;
 
     for (int x = 1; x <= FIELD_WIDTH; ++x) {
       int fallCnt = 0;
@@ -872,7 +872,7 @@ public:
   /**
    * ブロックを落下させる時に落下させる位置を更新する
    */
-  void updatePutPackLine() {
+  inline void updatePutPackLine() {
     for (int x = 1; x <= FIELD_WIDTH; ++x) {
       setPutPackLine(x);
     }
@@ -881,7 +881,7 @@ public:
   /**
    * @param [int] x x座標の値
    */
-  void setPutPackLine(int x) {
+  inline void setPutPackLine(int x) {
     int y = 1;
 
     while (g_field[x][y] != EMPTY && y < HEIGHT-1) {
@@ -894,7 +894,7 @@ public:
   /**
    * フィールドの最大の高さと最低の高さを更新する
    */
-  void updateMaxHeight() {
+  inline void updateMaxHeight() {
     g_maxHeight = 0;
 
     for (int x = 1; x <= FIELD_WIDTH; ++x) {
