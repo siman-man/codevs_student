@@ -78,6 +78,7 @@ ll g_deleteId;
 int g_deleteCount;
 
 Pack g_packs[MAX_TURN]; // パック一覧
+Pack g_ojamaPacks[MAX_TURN]; // お邪魔で埋め尽くされたパック一覧
 
 struct Command {
   int pos;
@@ -89,15 +90,25 @@ struct Command {
   }
 };
 
-struct Node {
+struct Result {
   int value;
+  int score;
+
+  Result(int value = 0, int score = 0) {
+    this->value = value;
+    this->score = score;
+  }
+};
+
+struct Node {
+  Result result;
   int beforeX;
   bool chain;
   Command command;
   char field[WIDTH][HEIGHT];
 
   Node () {
-    this->value = 0;
+    this->result = Result();
     this->beforeX = 0;
   }
 
@@ -116,7 +127,7 @@ struct Node {
   }
 
   bool operator >(const Node &n) const {
-    return value < n.value;
+    return result.value < n.result.value;
   }
 };
 
@@ -238,7 +249,7 @@ public:
 
             if (putPack(x, rot, pack)) {
               Node cand;
-              cand.value = simulate(depth);
+              cand.result = simulate(depth);
               cand.chain = g_chain;
               cand.beforeX = x;
 
@@ -264,12 +275,12 @@ public:
         for (int j = 0; j < BEAM_WIDTH && !pque.empty(); j++) {
           Node node = pque.top(); pque.pop();
 
-          if (node.value >= WIN) {
+          if (node.result.value >= WIN) {
             return node.command;
           }
 
-          if (maxValue < node.value) {
-            maxValue = node.value;
+          if (maxValue < node.result.value) {
+            maxValue = node.result.value;
             bestCommand = node.command;
           }
 
@@ -451,7 +462,7 @@ public:
    *
    * @param [int] 評価値
    */
-  int simulate(int depth) {
+  Result simulate(int depth) {
     int chainCnt = 0;
     int value = 0;
     int score = 0;
@@ -491,7 +502,7 @@ public:
       g_chain = true;
     }
 
-    return value;
+    return Result(value, score);
   }
 
   /**
