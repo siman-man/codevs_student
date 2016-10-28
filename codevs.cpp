@@ -123,8 +123,8 @@ struct Node {
   ll hashCode() {
     ll hash = 0;
 
-    for (int x = 1; x <= FIELD_WIDTH; x++) {
-      for (int y = 1; y <= FIELD_HEIGHT; y++) {
+    for (int x = 1; x <= FIELD_WIDTH; ++x) {
+      for (int y = 1; y <= FIELD_HEIGHT; ++y) {
         int num = this->field[x][y];
         if (num == EMPTY) continue;
         hash ^= g_zoblishField[x][y][num];
@@ -165,8 +165,8 @@ public:
     g_checkId = 0;
     g_deleteId = 0;
 
-    for (int x = 0; x < WIDTH; x++) {
-      for (int y = 0; y < HEIGHT; y++) {
+    for (int x = 0; x < WIDTH; ++x) {
+      for (int y = 0; y < HEIGHT; ++y) {
         for (int i = 0; i < 12; i++) {
           g_zoblishField[x][y][i] = xor128();
         }
@@ -271,7 +271,7 @@ public:
         updatePutPackLine();
         memcpy(g_tempPutPackLine, g_myPutPackLine, sizeof(g_myPutPackLine));
 
-        for (int x = -1; x <= FIELD_WIDTH; x++) {
+        for (int x = -1; x <= FIELD_WIDTH; ++x) {
           for (int rot = 0; rot < 4; rot++) {
 
             if (putPack(x, rot, pack)) {
@@ -332,11 +332,11 @@ public:
   void fallPack() {
     g_checkId++;
 
-    for (int x = 1; x <= FIELD_WIDTH; x++) {
+    for (int x = 1; x <= FIELD_WIDTH; ++x) {
       int fallCnt = 0;
       int limitY = g_myPutPackLine[x];
 
-      for (int y = 1; y < limitY; y++) {
+      for (int y = 1; y < limitY; ++y) {
         if (g_packDeleteCount[x][y] == g_deleteId) {
           g_field[x][y] = EMPTY;
           fallCnt++;
@@ -413,19 +413,19 @@ public:
       if (x < 1 || x > FIELD_WIDTH) return false;
       g_field[x][y] = t0;
       setChainCheckId(y, x);
-      y++;
+      ++y;
     }
     if (t1 != EMPTY) {
       if (x < 1 || x > FIELD_WIDTH) return false;
       g_field[x][y] = t1;
       setChainCheckId(y, x);
-      y++;
+      ++y;
     }
     if (t2 != EMPTY) {
       if (x < 1 || x > FIELD_WIDTH) return false;
       g_field[x][y] = t2;
       setChainCheckId(y, x);
-      y++;
+      ++y;
     }
 
     assert(y <= HEIGHT);
@@ -515,7 +515,7 @@ public:
     if (g_myPutPackLine[2] - g_myPutPackLine[1] >= 4) {
       value -= 5;
     }
-    for (int x = 2; x < FIELD_WIDTH; x++) {
+    for (int x = 2; x < FIELD_WIDTH; ++x) {
       if (g_myPutPackLine[x-1] - g_myPutPackLine[x] >= 4 && g_myPutPackLine[x+1] - g_myPutPackLine[x] >= 4) {
         value -= 5;
       }
@@ -538,17 +538,17 @@ public:
     g_deleteCount = 0;
     g_deleteId++;
 
-    for (int y = 1; y <= g_maxHeight; y++) {
+    for (int y = 1; y <= g_maxHeight; ++y) {
       if (g_chainCheckHorizontal[y] == g_checkId) deleteCheckHorizontal(y);
     }
-    for (int y = 2; y < g_maxHeight; y++) {
+    for (int y = 2; y < g_maxHeight; ++y) {
       if (g_chainCheckRightUpV[y] == g_checkId) deleteCheckDiagonalRightUp(y, 1);
       if (g_chainCheckRightDownV[y] == g_checkId) deleteCheckDiagonalRightDown(y, 1);
     }
-    for (int x = 1; x <= FIELD_WIDTH; x++) {
+    for (int x = 1; x <= FIELD_WIDTH; ++x) {
       if (g_chainCheckVertical[x] == g_checkId) deleteCheckVertical(x);
     }
-    for (int x = 1; x < FIELD_WIDTH; x++) {
+    for (int x = 1; x < FIELD_WIDTH; ++x) {
       if (g_chainCheckRightUpH[x] == g_checkId) deleteCheckDiagonalRightUp(1, x);
       deleteCheckDiagonalRightDown(g_maxHeight, x);
     }
@@ -593,7 +593,7 @@ public:
       if (sum == DELETED_SUM) {
         assert(0 <= fromX && toX < WIDTH);
         g_deleteCount += (toX-fromX+1);
-        for (int x = fromX; x <= toX; x++) {
+        for (int x = fromX; x <= toX; ++x) {
           g_packDeleteCount[x][y] = g_deleteId;
         }
       }
@@ -639,7 +639,7 @@ public:
 
       if (sum == DELETED_SUM) {
         g_deleteCount += (toY-fromY+1);
-        for (int y = fromY; y <= toY; y++) {
+        for (int y = fromY; y <= toY; ++y) {
           g_packDeleteCount[x][y] = g_deleteId;
         }
       }
@@ -696,7 +696,7 @@ public:
         int i = 0;
         assert(0 <= fromX && toX < WIDTH);
         g_deleteCount += (toX-fromX+1);
-        for (int x = fromX; x <= toX; x++) {
+        for (int x = fromX; x <= toX; ++x) {
           g_packDeleteCount[x][fromY+i] = g_deleteId;
           i++;
         }
@@ -751,7 +751,7 @@ public:
       if (sum == DELETED_SUM) {
         int i = 0;
         g_deleteCount += (toX-fromX+1);
-        for (int x = fromX; x <= toX; x++) {
+        for (int x = fromX; x <= toX; ++x) {
           g_packDeleteCount[x][fromY-i] = g_deleteId;
           i++;
         }
@@ -790,8 +790,8 @@ public:
   int evaluateField() {
     int bonus = 0;
 
-    for (int x = 1; x <= FIELD_WIDTH; x++) {
-      for (int y = 2; y < g_myPutPackLine[x]; y++) {
+    for (int x = 1; x <= FIELD_WIDTH; ++x) {
+      for (int y = 2; y < g_myPutPackLine[x]; ++y) {
         if (g_field[x][y] != OJAMA) {
           bonus += simpleFilter(y, x);
         }
@@ -832,8 +832,8 @@ public:
 
     // [前のターン終了時の自分のフィールド情報]
     int t;
-    for (int y = 0; y < FIELD_HEIGHT; y++) {
-      for (int x = 1; x <= FIELD_WIDTH; x++) {
+    for (int y = 0; y < FIELD_HEIGHT; ++y) {
+      for (int x = 1; x <= FIELD_WIDTH; ++x) {
         cin >> t;
         g_myField[x][FIELD_HEIGHT-y] = t;
       }
@@ -848,8 +848,8 @@ public:
     int ojamaCnt = 0;
 
     // [前のターン終了時の相手のフィールド情報]
-    for (int y = 0; y < FIELD_HEIGHT; y++) {
-      for (int x = 1; x <= FIELD_WIDTH; x++) {
+    for (int y = 0; y < FIELD_HEIGHT; ++y) {
+      for (int x = 1; x <= FIELD_WIDTH; ++x) {
         cin >> t;
         g_enemyField[x][FIELD_HEIGHT-y] = t;
         if (t == OJAMA) {
@@ -873,7 +873,7 @@ public:
    * ブロックを落下させる時に落下させる位置を更新する
    */
   void updatePutPackLine() {
-    for (int x = 1; x <= FIELD_WIDTH; x++) {
+    for (int x = 1; x <= FIELD_WIDTH; ++x) {
       setPutPackLine(x);
     }
   }
@@ -885,7 +885,7 @@ public:
     int y = 1;
 
     while (g_field[x][y] != EMPTY && y < HEIGHT-1) {
-      y++;
+      ++y;
     }
 
     g_myPutPackLine[x] = y;
@@ -897,7 +897,7 @@ public:
   void updateMaxHeight() {
     g_maxHeight = 0;
 
-    for (int x = 1; x <= FIELD_WIDTH; x++) {
+    for (int x = 1; x <= FIELD_WIDTH; ++x) {
       g_maxHeight = max(g_maxHeight, g_myPutPackLine[x]-1);
     }
   }
@@ -907,8 +907,8 @@ public:
    */
   void showField() {
     fprintf(stderr,"\n");
-    for (int x = 0; x < WIDTH; x++) {
-      for (int y = 0; y < HEIGHT; y++) {
+    for (int x = 0; x < WIDTH; ++x) {
+      for (int y = 0; y < HEIGHT; ++y) {
         if (g_field[x][y] == 11) {
           fprintf(stderr,"B");
         } else {
