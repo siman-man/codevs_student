@@ -327,7 +327,7 @@ public:
   }
 
   /**
-   * パックの落下処理
+   * パックの落下処理と削除処理を行う
    */
   void fallPack() {
     g_checkId++;
@@ -705,7 +705,7 @@ public:
   }
 
   /**
-   * 連鎖判定
+   * 連鎖判定 (右下に進む)
    *
    * @param [int] sy チェックするy座標
    * @param [int] sx チェックするx座標
