@@ -21,6 +21,9 @@ const char DELETED_SUM = 10; // 消滅のために作るべき和の値
 const char EMPTY = 0; // 空のグリッド
 const char OJAMA = 11; // お邪魔ブロック
 
+const int NORMAL = 0; // 通常モード探索
+const int CHECK_POWER = 1; // 最大火力を調べる
+
 const int WIN = 9999999;
 
 int BASE_BEAM_WIDTH = 1000;
@@ -229,7 +232,7 @@ public:
     fflush(stderr);
 
     if (g_myOjamaStock > 0) {
-      cleanOjama(turn);
+      cleanOjama(turn, g_myOjamaStock);
     }
   }
 
@@ -248,9 +251,9 @@ public:
    * 一番良い操作を取得する
    *
    * @param [int] turn 今現在のターン
-   * @param [bool] attackMode 攻撃時の探索（初手はそのまま、2手目以降はお邪魔ブロック）
+   * @param [int] mode 探索の種類
    */
-   BestAction getBestAction(int turn, bool attackMode = false) {
+   BestAction getBestAction(int turn, int mode = NORMAL) {
     Node root;
     memcpy(root.field, g_field, sizeof(g_field));
     BestAction bestAction;
@@ -263,7 +266,7 @@ public:
 
     for (int depth = 0; depth < SEARCH_DEPTH; depth++) {
       priority_queue<Node, vector<Node>, greater<Node> > pque;
-      Pack pack = (depth > 0 && attackMode)? g_ojamaPacks[turn + depth] : g_packs[turn + depth];
+      Pack pack = g_packs[turn + depth];
 
       while (!que.empty()) {
         Node node = que.front(); que.pop();
@@ -449,7 +452,7 @@ public:
    * @param [int] ojamaStock 現在のお邪魔のストック数
    */
   void fillOjama(int turn, int ojamaStock) {
-    for (int t = turn; t <= min(MAX_TURN-1, (turn + SEARCH_DEPTH)) && ojamaStock > 0; t++) {
+    for (int t = turn; t < MAX_TURN && ojamaStock > 0; t++) {
       Pack *pack = &g_packs[t];
 
       for (int i = 0; i < 9 && ojamaStock > 0; i++) {
@@ -465,14 +468,16 @@ public:
    * ブロックからお邪魔を取り除く
    *
    * @param [int] turn 現在のターン
+   * @param [int] ojamaStock 現在のお邪魔のストック数
    */
-  void cleanOjama(int turn) {
-    for (int t = turn; t <= min(MAX_TURN-1, (turn + SEARCH_DEPTH)); t++) {
+  void cleanOjama(int turn, int ojamaStock) {
+    for (int t = turn; t < MAX_TURN && ojamaStock > 0; t++) {
       Pack *pack = &g_packs[t];
 
-      for (int i = 0; i < 9; i++) {
+      for (int i = 0; i < 9 && ojamaStock > 0; i++) {
         if (pack->t[i] == OJAMA) {
           pack->t[i] = EMPTY;
+          ojamaStock--;
         }
       }
     }
