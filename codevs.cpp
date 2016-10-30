@@ -59,8 +59,6 @@ int g_tempPutPackLine[WIDTH]; // 一時保存用
 ll g_packDeleteCount[WIDTH][HEIGHT];
 
 int g_maxHeight;
-int g_beforeTime;
-int g_myOjamaStock;
 
 bool g_chain;
 bool g_enemyPinch;
@@ -142,6 +140,8 @@ struct Node {
 class Codevs {
 public:
   int myRemainTime;
+  int beforeTime;
+  int myOjamaStock;
 
   /**
    * 1. ゲーム開始時の入力情報を読み込む
@@ -179,7 +179,7 @@ public:
       }
     }
 
-    g_beforeTime = 180000;
+    beforeTime = 180000;
     g_enemyPinch = false;
 
     readPackInfo();
@@ -187,6 +187,7 @@ public:
 
   /**
    * パック情報を読み込む
+   * お邪魔が全ての埋まった状態のパックも用意しておく
    */
   void readPackInfo() {
     fprintf(stderr,"readPackInfo =>\n");
@@ -225,8 +226,8 @@ public:
     readTurnInfo();
     updatePutPackLine();
 
-    if (g_myOjamaStock > 0) {
-      fillOjama(turn, g_myOjamaStock);
+    if (myOjamaStock > 0) {
+      fillOjama(turn, myOjamaStock);
     }
 
     BestAction action = getMyBestAction(turn);
@@ -235,8 +236,8 @@ public:
     cout << command.pos-1 << " " << command.rot << endl;
     fflush(stderr);
 
-    if (g_myOjamaStock > 0) {
-      cleanOjama(turn, g_myOjamaStock);
+    if (myOjamaStock > 0) {
+      cleanOjama(turn, myOjamaStock);
     }
   }
 
@@ -256,6 +257,7 @@ public:
    *
    * @param [int] turn 今現在のターン
    * @param [int] mode 探索の種類
+   * @return [BestAction] 一番ベストな行動情報
    */
    BestAction getBestAction(int turn, int mode = NORMAL) {
     Node root;
@@ -283,7 +285,7 @@ public:
 
             if (putPack(x, rot, pack)) {
               Node cand;
-              cand.result = simulate(depth);
+              cand.result = simulate(depth, mode);
               cand.chain = g_chain;
               cand.command = (depth == 0)? Command(x, rot) : node.command;
 
@@ -490,8 +492,10 @@ public:
    * 連鎖処理のシミュレーションを行う
    *
    * @param [int] 評価値
+   * @param [int] 探索の種別
+   * @return [Result] 連鎖処理の結果
    */
-  Result simulate(int depth) {
+  Result simulate(int depth, int mode) {
     int chainCnt = 0;
     int value = 0;
     int score = 0;
@@ -523,6 +527,10 @@ public:
 
     if (chainCnt >= 2 || (depth > 0 && 1 <= chainCnt && chainCnt <= 2)) {
       g_chain = true;
+    }
+
+    if (mode == CHECK_POWER) {
+      value += 100 * score;
     }
 
     return Result(value, score);
@@ -819,11 +827,11 @@ public:
       BEAM_WIDTH = BASE_BEAM_WIDTH;
     }
 
-    fprintf(stderr,"%d: myRemainTime = %d, use time = %d\n", turn, myRemainTime, g_beforeTime - myRemainTime);
-    g_beforeTime = myRemainTime;
+    fprintf(stderr,"%d: myRemainTime = %d, use time = %d\n", turn, myRemainTime, beforeTime - myRemainTime);
+    beforeTime = myRemainTime;
 
     // [自分のお邪魔ストック]
-    cin >> g_myOjamaStock;
+    cin >> myOjamaStock;
 
 
     // [前のターン終了時の自分のフィールド情報]
