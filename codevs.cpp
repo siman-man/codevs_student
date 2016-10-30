@@ -112,14 +112,12 @@ struct BestAction {
 
 struct Node {
   Result result;
-  int beforeX;
   bool chain;
   Command command;
   char field[WIDTH][HEIGHT];
 
   Node () {
     this->result = Result();
-    this->beforeX = 0;
   }
 
   ll hashCode() {
@@ -281,7 +279,6 @@ public:
               Node cand;
               cand.result = simulate(depth);
               cand.chain = g_chain;
-              cand.beforeX = x;
               cand.command = (depth == 0)? Command(x, rot) : node.command;
 
               if (g_maxHeight < DANGER_LINE) {
