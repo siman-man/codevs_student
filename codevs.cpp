@@ -141,6 +141,8 @@ struct Node {
 
 class Codevs {
 public:
+  int myRemainTime;
+
   /**
    * 1. ゲーム開始時の入力情報を読み込む
    * 2. フィールド情報を初期化しておく
@@ -161,6 +163,10 @@ public:
     memset(g_chainCheckRightUpV, -1, sizeof(g_chainCheckRightUpV));
     memset(g_chainCheckRightDownV, -1, sizeof(g_chainCheckRightDownV));
     memset(g_packDeleteCount, -1, sizeof(g_packDeleteCount));
+    memset(g_putPackLine, -1, sizeof(g_putPackLine));
+
+    g_putPackLine[0] = HEIGHT;
+    g_putPackLine[FIELD_WIDTH+1] = HEIGHT;
 
     g_checkId = 0;
     g_deleteId = 0;
@@ -509,16 +515,10 @@ public:
 
     value += evaluateField();
 
-    if (g_putPackLine[2] - g_putPackLine[1] >= 4) {
-      value -= 5;
-    }
-    for (int x = 2; x < FIELD_WIDTH; ++x) {
+    for (int x = 1; x <= FIELD_WIDTH; ++x) {
       if (g_putPackLine[x-1] - g_putPackLine[x] >= 4 && g_putPackLine[x+1] - g_putPackLine[x] >= 4) {
         value -= 5;
       }
-    }
-    if (g_putPackLine[FIELD_WIDTH-1] - g_putPackLine[FIELD_WIDTH] >= 4) {
-      value -= 5;
     }
 
     if (chainCnt >= 2 || (depth > 0 && 1 <= chainCnt && chainCnt <= 2)) {
@@ -809,7 +809,6 @@ public:
     cin >> turn;
 
     // [自分の残り思考時間。単位はミリ秒]
-    int myRemainTime;
     cin >> myRemainTime;
 
     if (myRemainTime > 90000) {
