@@ -248,6 +248,16 @@ public:
    */
   BestAction getMyBestAction(int turn) {
     memcpy(g_field, g_myField, sizeof(g_myField));
+    SEARCH_DEPTH = 10;
+    BASE_BEAM_WIDTH = 1000;
+
+    if (myRemainTime > 90000) {
+      BEAM_WIDTH = 3 * BASE_BEAM_WIDTH;
+    } else if (myRemainTime < 60000) {
+      BEAM_WIDTH = BASE_BEAM_WIDTH / 2;
+    } else {
+      BEAM_WIDTH = BASE_BEAM_WIDTH;
+    }
 
     return getBestAction(turn);
   }
@@ -305,6 +315,7 @@ public:
         Node node = pque.top(); pque.pop();
 
         if (node.result.value >= WIN) {
+          if (depth == 0) return BestAction(Command(-2, 0), node.result);
           return BestAction(node.command, node.result);
         }
 
@@ -772,11 +783,22 @@ public:
       if (num + g_field[x][y-3] == DELETED_SUM) bonus += 3;
       if (num + g_field[x-1][y-3] == DELETED_SUM) bonus += 5;
       if (num + g_field[x+1][y-3] == DELETED_SUM) bonus += 5;
+
+      if (g_field[x-1][y-2] != EMPTY && g_field[x-2][y-3] != EMPTY && (num + g_field[x-1][y-2] + g_field[x-2][y-3]) == DELETED_SUM) bonus += 5;
+      if (g_field[x][y-1] != EMPTY && g_field[x][y-3] != EMPTY && (num + g_field[x][y-1] + g_field[x][y-3]) == DELETED_SUM) bonus += 3;
+      if (g_field[x][y-2] != EMPTY && g_field[x][y-3] != EMPTY && (num + g_field[x][y-2] + g_field[x][y-3]) == DELETED_SUM) bonus += 3;
+      if (g_field[x+1][y-2] != EMPTY && g_field[x+2][y-3] != EMPTY && (num + g_field[x+1][y-2] + g_field[x+2][y-3]) == DELETED_SUM) bonus += 5;
     }
     if (y >= 3) {
       if (num + g_field[x][y-2] == DELETED_SUM) bonus += 6;
       if (num + g_field[x-1][y-2] == DELETED_SUM) bonus += 9;
       if (num + g_field[x+1][y-2] == DELETED_SUM) bonus += 9;
+
+      if (g_field[x-1][y-2] != EMPTY && g_field[x+1][y] != EMPTY && (num + g_field[x-1][y-2] + g_field[x+1][y]) == DELETED_SUM) bonus += 5;
+      if (g_field[x-1][y] != EMPTY && g_field[x+1][y-2] != EMPTY && (num + g_field[x-1][y] + g_field[x+1][y-2]) == DELETED_SUM) bonus += 5;
+
+      if (g_field[x+1][y-2] != EMPTY && g_field[x+2][y-2] != EMPTY && (num + g_field[x+1][y-2] + g_field[x+2][y-2]) == DELETED_SUM) bonus += 3;
+      if (g_field[x-1][y-2] != EMPTY && g_field[x-2][y-2] != EMPTY && (num + g_field[x-1][y-2] + g_field[x-2][y-2]) == DELETED_SUM) bonus += 3;
     }
     if (y >= 2) {
       if (g_field[x-1][y-1] != EMPTY && g_field[x-2][y-1] != EMPTY && (num + g_field[x-1][y-1] + g_field[x-2][y-1]) == DELETED_SUM) bonus += 5;
@@ -818,14 +840,6 @@ public:
 
     // [自分の残り思考時間。単位はミリ秒]
     cin >> myRemainTime;
-
-    if (myRemainTime > 90000) {
-      BEAM_WIDTH = 3 * BASE_BEAM_WIDTH;
-    } else if (myRemainTime < 60000) {
-      BEAM_WIDTH = BASE_BEAM_WIDTH / 2;
-    } else {
-      BEAM_WIDTH = BASE_BEAM_WIDTH;
-    }
 
     fprintf(stderr,"%d: myRemainTime = %d, use time = %d\n", turn, myRemainTime, beforeTime - myRemainTime);
     beforeTime = myRemainTime;
