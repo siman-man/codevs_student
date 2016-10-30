@@ -50,8 +50,7 @@ char g_myField[WIDTH][HEIGHT]; // 自フィールド
 char g_enemyField[WIDTH][HEIGHT]; // 敵フィールド
 char g_field[WIDTH][HEIGHT]; // フィールド
 
-int g_myPutPackLine[WIDTH]; // 次にブロックを設置する高さを保持する配列
-int g_enemyPutPackLine[WIDTH]; // 次にブロックを設置する高さを保持する配列
+int g_putPackLine[WIDTH]; // 次にブロックを設置する高さを保持する配列
 int g_tempPutPackLine[WIDTH]; // 一時保存用
 
 ll g_packDeleteCount[WIDTH][HEIGHT];
@@ -241,6 +240,7 @@ public:
    */
   BestAction getMyBestAction(int turn) {
     memcpy(g_field, g_myField, sizeof(g_myField));
+
     return getBestAction(turn);
   }
 
@@ -269,7 +269,7 @@ public:
         Node node = que.front(); que.pop();
         memcpy(g_field, node.field, sizeof(node.field));
         updatePutPackLine();
-        memcpy(g_tempPutPackLine, g_myPutPackLine, sizeof(g_myPutPackLine));
+        memcpy(g_tempPutPackLine, g_putPackLine, sizeof(g_putPackLine));
 
         for (int x = -1; x <= FIELD_WIDTH; ++x) {
           for (int rot = 0; rot < 4; rot++) {
@@ -288,7 +288,7 @@ public:
             }
 
             memcpy(g_field, node.field, sizeof(node.field));
-            memcpy(g_myPutPackLine, g_tempPutPackLine, sizeof(g_tempPutPackLine));
+            memcpy(g_putPackLine, g_tempPutPackLine, sizeof(g_tempPutPackLine));
           }
         }
       }
@@ -329,13 +329,13 @@ public:
 
     for (int x = 1; x <= FIELD_WIDTH; ++x) {
       int fallCnt = 0;
-      int limitY = g_myPutPackLine[x];
+      int limitY = g_putPackLine[x];
 
       for (int y = 1; y < limitY; ++y) {
         if (g_packDeleteCount[x][y] == g_deleteId) {
           g_field[x][y] = EMPTY;
           fallCnt++;
-          g_myPutPackLine[x]--;
+          g_putPackLine[x]--;
         } else if (fallCnt > 0) {
           int t = y-fallCnt;
           g_field[x][t] = g_field[x][y];
@@ -398,7 +398,7 @@ public:
    * @param [bool] 設置可能かどうか
    */
    bool putLinePack(int x, int t0, int t1, int t2) {
-    int y = g_myPutPackLine[x];
+    int y = g_putPackLine[x];
 
     assert(t0 >= 0);
     assert(t1 >= 0);
@@ -424,7 +424,7 @@ public:
     }
 
     assert(y <= HEIGHT);
-    g_myPutPackLine[x] = y;
+    g_putPackLine[x] = y;
     return true;
   }
 
@@ -507,15 +507,15 @@ public:
 
     value += evaluateField();
 
-    if (g_myPutPackLine[2] - g_myPutPackLine[1] >= 4) {
+    if (g_putPackLine[2] - g_putPackLine[1] >= 4) {
       value -= 5;
     }
     for (int x = 2; x < FIELD_WIDTH; ++x) {
-      if (g_myPutPackLine[x-1] - g_myPutPackLine[x] >= 4 && g_myPutPackLine[x+1] - g_myPutPackLine[x] >= 4) {
+      if (g_putPackLine[x-1] - g_putPackLine[x] >= 4 && g_putPackLine[x+1] - g_putPackLine[x] >= 4) {
         value -= 5;
       }
     }
-    if (g_myPutPackLine[FIELD_WIDTH-1] - g_myPutPackLine[FIELD_WIDTH] >= 4) {
+    if (g_putPackLine[FIELD_WIDTH-1] - g_putPackLine[FIELD_WIDTH] >= 4) {
       value -= 5;
     }
 
@@ -786,7 +786,7 @@ public:
     int bonus = 0;
 
     for (int x = 1; x <= FIELD_WIDTH; ++x) {
-      for (int y = 2; y < g_myPutPackLine[x]; ++y) {
+      for (int y = 2; y < g_putPackLine[x]; ++y) {
         if (g_field[x][y] != OJAMA) {
           bonus += simpleFilter(y, x);
         }
@@ -883,7 +883,7 @@ public:
       ++y;
     }
 
-    g_myPutPackLine[x] = y;
+    g_putPackLine[x] = y;
   }
 
   /**
@@ -893,7 +893,7 @@ public:
     g_maxHeight = 0;
 
     for (int x = 1; x <= FIELD_WIDTH; ++x) {
-      g_maxHeight = max(g_maxHeight, g_myPutPackLine[x]-1);
+      g_maxHeight = max(g_maxHeight, g_putPackLine[x]-1);
     }
   }
 
@@ -910,7 +910,7 @@ public:
           fprintf(stderr,"%d", g_field[x][y]);
         }
       }
-      fprintf(stderr," %d\n", g_myPutPackLine[x]);
+      fprintf(stderr," %d\n", g_putPackLine[x]);
     }
     fprintf(stderr,"\n");
   }
