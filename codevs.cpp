@@ -22,14 +22,16 @@ const char EMPTY = 0; // 空のグリッド
 const char OJAMA = 11; // お邪魔ブロック
 
 const int NORMAL = 0; // 通常モード探索
-const int CHECK_POWER = 1; // 最大火力を調べる
+const int FULLPOWER = 1; // 直近で出せる最大火力
+const int ATTAKED = 2; // 攻撃されたときの火力
+const int WARNING = 3; // 攻撃警戒モード
 
 const int WIN = 9999999;
 
-int BASE_BEAM_WIDTH = 1000;
-int BEAM_WIDTH = 8000;
-int SEARCH_DEPTH = 10;
-int g_scoreLimit = 300;
+int BASE_BEAM_WIDTH = 0;
+int BEAM_WIDTH = 0;
+int SEARCH_DEPTH = 0;
+int g_scoreLimit = 500;
 
 /**
  * 乱数生成器
@@ -62,6 +64,8 @@ int g_maxHeight;
 
 bool g_chain;
 bool g_enemyPinch;
+bool g_warning;
+int g_fireTurn;
 
 ll g_zoblishField[WIDTH][HEIGHT][12]; // zoblish hash生成用の乱数テーブル
 
@@ -96,13 +100,19 @@ struct Result {
     this->value = value;
     this->score = score;
   }
+
+  int getOjamaCnt() {
+    return score / 5;
+  }
 };
 
 struct BestAction {
+  int fireTurn;
   Command command;
   Result result;
 
-  BestAction(Command command = Command(), Result result = Result()) {
+  BestAction(int fireTurn = -1, Command command = Command(), Result result = Result()) {
+    this->fireTurn = fireTurn;
     this->command = command;
     this->result = result;
   }
@@ -230,12 +240,38 @@ public:
       fillOjama(turn, myOjamaStock);
     }
 
-    BestAction action = getMyBestAction(turn);
-    Command command = action.command;
+    /**
+     * 敵の盤面情報を調査する
+     * 1. 通常
+     * 2. 攻撃された場合
+     * 3. 攻撃予測
+     */
+    BestAction ENA = getEnemyBestAction(turn);
+    BestAction EAA = getEnemyBestAction(turn, ATTAKED);
+    BestAction EFP = getEnemyBestAction(turn, FULLPOWER);
 
-    BestAction enemyAction = getEnemyBestAction(turn);
-    Command enemyCommand = enemyAction.command;
-    fprintf(stderr,"%2d: my (%d) - (%d) enemy\n", turn, action.result.score/5, enemyAction.result.score/5);
+    if (EFP.result.getOjamaCnt() >= 40) {
+      g_fireTurn = EFP.fireTurn;
+      g_warning = true;
+    } else {
+      g_warning = false;
+    }
+
+    /**
+     * 自分の盤面情報を調査する
+     * 1. 通常
+     * 2. 攻撃された場合
+     * 3. 直近で出せる最大火力
+     */
+    BestAction MNA = (g_warning)? getMyBestAction(turn, ATTAKED) : getMyBestAction(turn);
+    BestAction MAA = getMyBestAction(turn, ATTAKED);
+    BestAction MFP = getMyBestAction(turn, FULLPOWER);
+    Command command = MNA.command;
+
+    fprintf(stderr,"%2d: M (%3d,%3d,%3d)\n", turn,
+    MNA.result.score/5, MAA.result.score/5, MFP.result.score/5);
+    fprintf(stderr,"%2d: E (%3d,%3d,%3d) F: %d\n", turn,
+    ENA.result.score/5, EAA.result.score/5, EFP.result.score/5, g_fireTurn);
 
     cout << command.pos-1 << " " << command.rot << endl;
     fflush(stderr);
@@ -248,30 +284,71 @@ public:
   /**
    * 自分のベストなコマンドを選択する
    *
+   * @param [int] turn 現在のターン
+   * @param [int] mode 探索の種別
    * @return [BestAction] 一番良いアクション
    */
-  BestAction getMyBestAction(int turn) {
+  BestAction getMyBestAction(int turn, int mode = NORMAL) {
     memcpy(g_field, g_myField, sizeof(g_myField));
     SEARCH_DEPTH = 10;
+    BASE_BEAM_WIDTH = 800;
 
-    if (myRemainTime > 90000) {
-      BEAM_WIDTH = 2 * BASE_BEAM_WIDTH;
-    } else if (myRemainTime < 60000) {
-      BEAM_WIDTH = BASE_BEAM_WIDTH / 2;
-    } else {
-      BEAM_WIDTH = BASE_BEAM_WIDTH;
+    switch(mode) {
+      case NORMAL:
+        if (myRemainTime >= 60000) {
+          BEAM_WIDTH = 2 * BASE_BEAM_WIDTH;
+        } else if (myRemainTime < 60000) {
+          BEAM_WIDTH = BASE_BEAM_WIDTH / 2;
+        } else {
+          BEAM_WIDTH = BASE_BEAM_WIDTH;
+        }
+        break;
+      case WARNING:
+        SEARCH_DEPTH = 5;
+        BEAM_WIDTH = 6000;
+        break;
+      case ATTAKED:
+        SEARCH_DEPTH = 12;
+        BEAM_WIDTH = 400;
+        break;
+      case FULLPOWER:
+        SEARCH_DEPTH = 3;
+        BEAM_WIDTH = 1600;
+        break;
     }
 
-    return getBestAction(turn);
+    if (mode == ATTAKED) {
+      return getBestAction(turn, mode, g_fireTurn+1);
+    } else {
+      return getBestAction(turn, mode);
+    }
   }
 
-  BestAction getEnemyBestAction(int turn) {
+  /**
+   * 敵の盤面を探索する
+   *
+   * @param [int] turn 現在のターン
+   * @param [int] mode 探索の種別
+   */
+  BestAction getEnemyBestAction(int turn, int mode = NORMAL) {
     memcpy(g_field, g_enemyField, sizeof(g_enemyField));
 
-    SEARCH_DEPTH = 10;
-    BEAM_WIDTH = 400;
+    switch(mode) {
+      case FULLPOWER:
+        SEARCH_DEPTH = 8;
+        BEAM_WIDTH = 400;
+        break;
+      default:
+        SEARCH_DEPTH = 8;
+        BEAM_WIDTH = 400;
+        break;
+    }
 
-    return getBestAction(turn);
+    if (mode == ATTAKED) {
+      return getBestAction(turn, mode, turn+3);
+    } else {
+      return getBestAction(turn, mode);
+    }
   }
 
   /**
@@ -281,7 +358,7 @@ public:
    * @param [int] mode 探索の種類
    * @return [BestAction] 一番ベストな行動情報
    */
-   BestAction getBestAction(int turn, int mode = NORMAL) {
+   BestAction getBestAction(int turn, int mode = NORMAL, int attackTurn = MAX_TURN) {
     Node root;
     memcpy(root.field, g_field, sizeof(g_field));
     BestAction bestAction;
@@ -294,7 +371,7 @@ public:
 
     for (int depth = 0; depth < SEARCH_DEPTH; depth++) {
       priority_queue<Node, vector<Node>, greater<Node> > pque;
-      Pack pack = g_packs[turn + depth];
+      Pack pack = (mode == ATTAKED && (turn+depth) >= attackTurn)? g_ojamaPacks[turn+depth] : g_packs[turn+depth];
 
       while (!que.empty()) {
         Node node = que.front(); que.pop();
@@ -327,12 +404,12 @@ public:
         Node node = pque.top(); pque.pop();
 
         if (node.result.value >= WIN) {
-          return BestAction(node.command, node.result);
+          return BestAction(turn+depth, node.command, node.result);
         }
 
         if (maxValue < node.result.value) {
           maxValue = node.result.value;
-          bestAction = BestAction(node.command, node.result);
+          bestAction = BestAction(turn+depth, node.command, node.result);
         }
 
         if (depth < SEARCH_DEPTH-1) {
@@ -551,7 +628,7 @@ public:
       g_chain = true;
     }
 
-    if (mode == CHECK_POWER) {
+    if (mode == FULLPOWER) {
       value += 100 * score;
     }
 
@@ -877,10 +954,9 @@ public:
       }
     }
 
-    if (ojamaCnt >= 50) {
+    if (ojamaCnt >= 60) {
       g_scoreLimit = 90;
-    }
-    if (ojamaCnt >= 25) {
+    } else if (ojamaCnt >= 25) {
       g_scoreLimit = 120;
       g_enemyPinch = true;
     }
