@@ -233,6 +233,10 @@ public:
     BestAction action = getMyBestAction(turn);
     Command command = action.command;
 
+    BestAction enemyAction = getEnemyBestAction(turn);
+    Command enemyCommand = enemyAction.command;
+    fprintf(stderr,"%2d: my (%d) - (%d) enemy\n", turn, action.result.score/5, enemyAction.result.score/5);
+
     cout << command.pos-1 << " " << command.rot << endl;
     fflush(stderr);
 
@@ -248,6 +252,24 @@ public:
    */
   BestAction getMyBestAction(int turn) {
     memcpy(g_field, g_myField, sizeof(g_myField));
+    SEARCH_DEPTH = 10;
+
+    if (myRemainTime > 90000) {
+      BEAM_WIDTH = 2 * BASE_BEAM_WIDTH;
+    } else if (myRemainTime < 60000) {
+      BEAM_WIDTH = BASE_BEAM_WIDTH / 2;
+    } else {
+      BEAM_WIDTH = BASE_BEAM_WIDTH;
+    }
+
+    return getBestAction(turn);
+  }
+
+  BestAction getEnemyBestAction(int turn) {
+    memcpy(g_field, g_enemyField, sizeof(g_enemyField));
+
+    SEARCH_DEPTH = 10;
+    BEAM_WIDTH = 400;
 
     return getBestAction(turn);
   }
@@ -819,15 +841,8 @@ public:
     // [自分の残り思考時間。単位はミリ秒]
     cin >> myRemainTime;
 
-    if (myRemainTime > 90000) {
-      BEAM_WIDTH = 3 * BASE_BEAM_WIDTH;
-    } else if (myRemainTime < 60000) {
-      BEAM_WIDTH = BASE_BEAM_WIDTH / 2;
-    } else {
-      BEAM_WIDTH = BASE_BEAM_WIDTH;
-    }
 
-    fprintf(stderr,"%d: myRemainTime = %d, use time = %d\n", turn, myRemainTime, beforeTime - myRemainTime);
+    fprintf(stderr,"%2d:T=%d,UT=%d\n", turn, myRemainTime, beforeTime - myRemainTime);
     beforeTime = myRemainTime;
 
     // [自分のお邪魔ストック]
