@@ -69,7 +69,8 @@ ll g_chainCheckHorizontal[HEIGHT]; // 連鎖判定フィールド
 ll g_chainCheckVertical[WIDTH]; // 連鎖判定フィールド
 ll g_chainCheckRightUpH[WIDTH]; // 連鎖判定フィールド
 ll g_chainCheckRightUpV[HEIGHT]; // 連鎖判定フィールド
-ll g_chainCheckRightDownV[HEIGHT]; // 連鎖判定フィールド
+ll g_chainCheckLeftUpV[HEIGHT]; // 連鎖判定フィールド
+ll g_chainCheckLeftUpH[WIDTH]; // 連鎖判定フィールド
 ll g_checkId;
 
 ll g_deleteId;
@@ -161,7 +162,8 @@ public:
     memset(g_chainCheckVertical, -1, sizeof(g_chainCheckVertical));
     memset(g_chainCheckRightUpH, -1, sizeof(g_chainCheckRightUpH));
     memset(g_chainCheckRightUpV, -1, sizeof(g_chainCheckRightUpV));
-    memset(g_chainCheckRightDownV, -1, sizeof(g_chainCheckRightDownV));
+    memset(g_chainCheckLeftUpH, -1, sizeof(g_chainCheckLeftUpH));
+    memset(g_chainCheckLeftUpV, -1, sizeof(g_chainCheckLeftUpV));
     memset(g_packDeleteCount, -1, sizeof(g_packDeleteCount));
     memset(g_putPackLine, -1, sizeof(g_putPackLine));
 
@@ -447,7 +449,8 @@ public:
     g_chainCheckVertical[x] = g_checkId;
     if (x-y >= 0) g_chainCheckRightUpH[x-y+1] = g_checkId;
     if (x-y < 0) g_chainCheckRightUpV[y-x+1] = g_checkId;
-    if (y+x < HEIGHT) g_chainCheckRightDownV[y+x-1] = g_checkId;
+    if (y-(FIELD_WIDTH-x) >= 2) g_chainCheckLeftUpV[y-(FIELD_WIDTH-x)] = g_checkId;
+    if (x+(y-1) <= FIELD_WIDTH) g_chainCheckLeftUpH[x+(y-1)] = g_checkId;
   }
 
   /**
@@ -548,14 +551,14 @@ public:
     }
     for (int y = 2; y < g_maxHeight; ++y) {
       if (g_chainCheckRightUpV[y] == g_checkId) deleteCheckDiagonalRightUp(y, 1);
-      deleteCheckDiagonalLeftUp(y, FIELD_WIDTH);
+      if (g_chainCheckLeftUpV[y] == g_checkId) deleteCheckDiagonalLeftUp(y, FIELD_WIDTH);
     }
     for (int x = 1; x <= FIELD_WIDTH; ++x) {
       if (g_chainCheckVertical[x] == g_checkId) deleteCheckVertical(x);
     }
     for (int x = 1; x <= FIELD_WIDTH; ++x) {
       if (g_chainCheckRightUpH[x] == g_checkId) deleteCheckDiagonalRightUp(1, x);
-      deleteCheckDiagonalLeftUp(1, x);
+      if (g_chainCheckLeftUpH[x] == g_checkId) deleteCheckDiagonalLeftUp(1, x);
     }
   }
 
@@ -670,8 +673,6 @@ public:
         toY++;
         toX++;
 
-        if (toY > g_maxHeight) break;
-
         if (sum == 0) {
           fromY = toY;
           fromX = toX;
@@ -710,7 +711,7 @@ public:
   }
 
   /**
-   * 連鎖判定 (右下に進む)
+   * 連鎖判定 (左上に進む)
    *
    * @param [int] sy チェックするy座標
    * @param [int] sx チェックするx座標
@@ -740,6 +741,7 @@ public:
           sum += num;
         }
       } else {
+        assert(g_field[fromX][fromY] != EMPTY);
         sum -= g_field[fromX][fromY];
         fromY++;
         fromX--;
@@ -755,7 +757,7 @@ public:
         int i = 0;
         g_deleteCount += (fromX-toX+1);
         for (int x = toX; x <= fromX; ++x) {
-          g_packDeleteCount[x][fromY+i] = g_deleteId;
+          g_packDeleteCount[x][toY-i] = g_deleteId;
           i++;
         }
       }
