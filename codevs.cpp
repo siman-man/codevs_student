@@ -18,6 +18,7 @@ const int DANGER_LINE = FIELD_HEIGHT + 1; // 危険ライン
 
 const char DELETED_SUM = 10; // 消滅のために作るべき和の値
 
+const char WALL = -1;
 const char EMPTY = 0; // 空のグリッド
 const char OJAMA = 11; // お邪魔ブロック
 
@@ -41,6 +42,10 @@ unsigned long long xor128(){
   return (rw=(rw^(rw>>19))^(rt^(rt>>8)));
 }
 
+inline int calcZ(int y, int x) {
+  return x * HEIGHT + y;
+}
+
 struct Pack {
   int t[9];
 
@@ -49,9 +54,9 @@ struct Pack {
   }
 };
 
-char g_myField[WIDTH][HEIGHT]; // 自フィールド
-char g_enemyField[WIDTH][HEIGHT]; // 敵フィールド
-char g_field[WIDTH][HEIGHT]; // フィールド
+char g_myField[WIDTH*HEIGHT]; // 自フィールド
+char g_enemyField[WIDTH*HEIGHT]; // 敵フィールド
+char g_field[WIDTH*HEIGHT]; // フィールド
 
 int g_putPackLine[WIDTH]; // 次にブロックを設置する高さを保持する配列
 int g_tempPutPackLine[WIDTH]; // 一時保存用
@@ -113,7 +118,7 @@ struct Node {
   Result result;
   bool chain;
   Command command;
-  char field[WIDTH][HEIGHT];
+  char field[WIDTH*HEIGHT];
 
   Node () {
     this->result = Result();
@@ -124,7 +129,7 @@ struct Node {
 
     for (int x = 1; x <= FIELD_WIDTH; ++x) {
       for (int y = 1; y <= FIELD_HEIGHT; ++y) {
-        int num = this->field[x][y];
+        int num = this->field[calcZ(y,x)];
         if (num == EMPTY) continue;
         hash ^= g_zoblishField[x][y][num];
       }
@@ -175,8 +180,15 @@ public:
 
     for (int x = 0; x < WIDTH; ++x) {
       for (int y = 0; y < HEIGHT; ++y) {
+        int z = calcZ(y, x);
+
         for (int i = 0; i < 12; i++) {
           g_zoblishField[x][y][i] = xor128();
+        }
+
+        if (x == 0 || x == WIDTH-1 || y == 0 || y == HEIGHT-1) {
+          g_myField[z] = WALL;
+          g_enemyField[z] = WALL;
         }
       }
     }
@@ -226,7 +238,6 @@ public:
    */
   void run(int turn) {
     readTurnInfo();
-    updatePutPackLine();
 
     if (myOjamaStock > 0) {
       fillOjama(turn, myOjamaStock);
@@ -343,13 +354,16 @@ public:
 
       for (int y = 1; y < limitY; ++y) {
         if (g_packDeleteCount[x][y] == g_deleteId) {
-          g_field[x][y] = EMPTY;
+          int z = calcZ(y, x);
+          g_field[z] = EMPTY;
           fallCnt++;
           g_putPackLine[x]--;
         } else if (fallCnt > 0) {
           int t = y-fallCnt;
-          g_field[x][t] = g_field[x][y];
-          g_field[x][y] = EMPTY;
+          int z = calcZ(y, x);
+          int zt = calcZ(t, x);
+          g_field[zt] = g_field[z];
+          g_field[z] = EMPTY;
           setChainCheckId(t, x);
         }
       }
@@ -416,19 +430,19 @@ public:
 
     if (t0 != EMPTY) {
       if (x < 1 || x > FIELD_WIDTH) return false;
-      g_field[x][y] = t0;
+      g_field[calcZ(y,x)] = t0;
       setChainCheckId(y, x);
       ++y;
     }
     if (t1 != EMPTY) {
       if (x < 1 || x > FIELD_WIDTH) return false;
-      g_field[x][y] = t1;
+      g_field[calcZ(y,x)] = t1;
       setChainCheckId(y, x);
       ++y;
     }
     if (t2 != EMPTY) {
       if (x < 1 || x > FIELD_WIDTH) return false;
-      g_field[x][y] = t2;
+      g_field[calcZ(y,x)] = t2;
       setChainCheckId(y, x);
       ++y;
     }
@@ -547,40 +561,37 @@ public:
     g_deleteId++;
 
     for (int y = 1; y <= g_maxHeight; ++y) {
-      if (g_chainCheckHorizontal[y] == g_checkId) deleteCheckHorizontal(y);
+      if (g_chainCheckHorizontal[y] == g_checkId) {
+        deleteCheck(calcZ(y,1), HEIGHT);
+      }
     }
     for (int y = 2; y < g_maxHeight; ++y) {
-      if (g_chainCheckRightUpV[y] == g_checkId) deleteCheckDiagonalRightUp(y, 1);
-      if (g_chainCheckLeftUpV[y] == g_checkId) deleteCheckDiagonalLeftUp(y, FIELD_WIDTH);
+      if (g_chainCheckRightUpV[y] == g_checkId) deleteCheck(calcZ(y,1), HEIGHT+1);
+      if (g_chainCheckLeftUpV[y] == g_checkId) deleteCheck(calcZ(y, FIELD_WIDTH), -HEIGHT+1);
     }
     for (int x = 1; x <= FIELD_WIDTH; ++x) {
-      if (g_chainCheckVertical[x] == g_checkId) deleteCheckVertical(x);
+      if (g_chainCheckVertical[x] == g_checkId) deleteCheck(calcZ(1,x), 1);
     }
     for (int x = 1; x <= FIELD_WIDTH; ++x) {
-      if (g_chainCheckRightUpH[x] == g_checkId) deleteCheckDiagonalRightUp(1, x);
-      if (g_chainCheckLeftUpH[x] == g_checkId) deleteCheckDiagonalLeftUp(1, x);
+      if (g_chainCheckRightUpH[x] == g_checkId) deleteCheck(calcZ(1,x), HEIGHT+1);
+      if (g_chainCheckLeftUpH[x] == g_checkId) deleteCheck(calcZ(1,x), -HEIGHT+1);
     }
   }
 
-  /**
-   * 横のラインの削除判定を行う
-   *
-   * @param [int] y チェックするy座標
-   */
-  void deleteCheckHorizontal(int y) {
-    int fromX = 1;
-    int toX = 1;
-    char sum = g_field[toX][y];
+  void deleteCheck(int sz, int diff) {
+    int fromZ = sz;
+    int toZ = sz;
+    char sum = g_field[sz];
 
-    while (toX <= FIELD_WIDTH) {
+    while (g_field[toZ] != WALL) {
       if (sum < DELETED_SUM) {
-        toX++;
+        toZ += diff;
 
         if (sum == 0) {
-          fromX = toX;
+          fromZ = toZ;
         }
 
-        char num = g_field[toX][y];
+        char num = g_field[toZ];
 
         if (num == EMPTY || num == OJAMA) {
           sum = 0;
@@ -588,176 +599,31 @@ public:
           sum += num;
         }
       } else {
-        assert(g_field[fromX][y] != EMPTY);
-        sum -= g_field[fromX][y];
-        fromX++;
+        assert(g_field[fromZ] != EMPTY);
+        sum -= g_field[fromZ];
 
-        if (fromX > toX) {
-          toX = fromX;
-          sum = g_field[toX][y];
+        if (fromZ == toZ) {
+          toZ += diff;
+          sum = g_field[toZ];
         }
+        fromZ += diff;
       }
 
       if (sum == DELETED_SUM) {
-        assert(0 <= fromX && toX < WIDTH);
-        g_deleteCount += (toX-fromX+1);
-        for (int x = fromX; x <= toX; ++x) {
-          g_packDeleteCount[x][y] = g_deleteId;
-        }
-      }
-    }
-  }
+        g_deleteCount += abs((fromZ-toZ)/diff)+1;
 
-  /**
-   * 縦のラインの削除判定を行う
-   *
-   * @param [int] x チェックするx座標
-   */
-  void deleteCheckVertical(int x) {
-    int fromY = 1;
-    int toY = 1;
-    char sum = g_field[x][toY];
-
-    while (toY <= g_maxHeight) {
-      if (sum < DELETED_SUM) {
-        toY++;
-
-        if (sum == 0) {
-          fromY = toY;
-        }
-
-        char num = g_field[x][toY];
-        if (num == EMPTY) break;
-
-        if (num == OJAMA) {
-          sum = 0;
+        if (diff < 0) {
+          for (int z = fromZ; z >= toZ; z+=diff) {
+            int x = z/HEIGHT;
+            int y = z%HEIGHT;
+            g_packDeleteCount[x][y] = g_deleteId;
+          }
         } else {
-          sum += num;
-        }
-      } else {
-        sum -= g_field[x][fromY];
-        fromY++;
-
-        if (fromY > toY) {
-          toY = fromY;
-          sum = g_field[x][toY];
-        }
-      }
-
-      if (sum == DELETED_SUM) {
-        g_deleteCount += (toY-fromY+1);
-        for (int y = fromY; y <= toY; ++y) {
-          g_packDeleteCount[x][y] = g_deleteId;
-        }
-      }
-    }
-  }
-
-  /**
-   * 斜めのラインの削除判定を行う (右上に進む)
-   *
-   * @param [int] sy チェックするy座標
-   * @param [int] sx チェックするx座標
-   */
-  void deleteCheckDiagonalRightUp(int sy, int sx) {
-    int fromY = sy;
-    int fromX = sx;
-    int toY = sy;
-    int toX = sx;
-    char sum = g_field[toX][toY];
-
-    while (toX <= FIELD_WIDTH && toY <= g_maxHeight) {
-
-      if (sum < DELETED_SUM) {
-        toY++;
-        toX++;
-
-        if (sum == 0) {
-          fromY = toY;
-          fromX = toX;
-        }
-
-        char num = g_field[toX][toY];
-
-        if (num == EMPTY || num == OJAMA) {
-          sum = 0;
-        } else {
-          sum += num;
-        }
-      } else {
-        assert(g_field[fromX][fromY] != EMPTY);
-        sum -= g_field[fromX][fromY];
-        fromY++;
-        fromX++;
-
-        if (fromX > toX) {
-          toX = fromX;
-          toY = fromY;
-          sum = g_field[toX][toY];
-        }
-      }
-
-      if (sum == DELETED_SUM) {
-        int i = 0;
-        assert(0 <= fromX && toX < WIDTH);
-        g_deleteCount += (toX-fromX+1);
-        for (int x = fromX; x <= toX; ++x) {
-          g_packDeleteCount[x][fromY+i] = g_deleteId;
-          i++;
-        }
-      }
-    }
-  }
-
-  /**
-   * 連鎖判定 (左上に進む)
-   *
-   * @param [int] sy チェックするy座標
-   * @param [int] sx チェックするx座標
-   */
-  void deleteCheckDiagonalLeftUp(int sy, int sx) {
-    int fromY = sy;
-    int fromX = sx;
-    int toY = sy;
-    int toX = sx;
-    char sum = g_field[toX][toY];
-
-    while (toX >= 1 && toY <= g_maxHeight) {
-      if (sum < DELETED_SUM) {
-        toY++;
-        toX--;
-
-        if (sum == 0) {
-          fromY = toY;
-          fromX = toX;
-        }
-
-        int num = g_field[toX][toY];
-
-        if (num == EMPTY || num == OJAMA) {
-          sum = 0;
-        } else {
-          sum += num;
-        }
-      } else {
-        assert(g_field[fromX][fromY] != EMPTY);
-        sum -= g_field[fromX][fromY];
-        fromY++;
-        fromX--;
-
-        if (fromX < toX) {
-          toY = fromY;
-          toX = fromX;
-          sum = g_field[toX][toY];
-        }
-      }
-
-      if (sum == DELETED_SUM) {
-        int i = 0;
-        g_deleteCount += (fromX-toX+1);
-        for (int x = toX; x <= fromX; ++x) {
-          g_packDeleteCount[x][toY-i] = g_deleteId;
-          i++;
+          for (int z = fromZ; z <= toZ; z+=diff) {
+            int x = z/HEIGHT;
+            int y = z%HEIGHT;
+            g_packDeleteCount[x][y] = g_deleteId;
+          }
         }
       }
     }
@@ -765,22 +631,22 @@ public:
 
   int simpleFilter(int y, int x) {
     int bonus = 0;
-    char num = g_field[x][y];
+    char num = g_field[calcZ(y,x)];
 
     if (y >= 4) {
-      if (num + g_field[x][y-3] == DELETED_SUM) bonus += 3;
-      if (num + g_field[x-1][y-3] == DELETED_SUM) bonus += 5;
-      if (num + g_field[x+1][y-3] == DELETED_SUM) bonus += 5;
+      if (num + g_field[calcZ(y-3,x)] == DELETED_SUM) bonus += 3;
+      if (x >= 2 && num + g_field[calcZ(y-3,x-1)] == DELETED_SUM) bonus += 5;
+      if (x < FIELD_WIDTH && num + g_field[calcZ(y-3,x+1)] == DELETED_SUM) bonus += 5;
     }
     if (y >= 3) {
-      if (num + g_field[x][y-2] == DELETED_SUM) bonus += 6;
-      if (num + g_field[x-1][y-2] == DELETED_SUM) bonus += 9;
-      if (num + g_field[x+1][y-2] == DELETED_SUM) bonus += 9;
+      if (num + g_field[calcZ(y-2,x)] == DELETED_SUM) bonus += 6;
+      if (x >= 2 && num + g_field[calcZ(y-2,x-1)] == DELETED_SUM) bonus += 9;
+      if (x < FIELD_WIDTH && num + g_field[calcZ(y-2,x+1)] == DELETED_SUM) bonus += 9;
     }
     if (y >= 2) {
-      if (g_field[x-1][y-1] != EMPTY && g_field[x-2][y-1] != EMPTY && (num + g_field[x-1][y-1] + g_field[x-2][y-1]) == DELETED_SUM) bonus += 5;
-      if (g_field[x-1][y-1] != EMPTY && g_field[x+1][y-1] != EMPTY && (num + g_field[x-1][y-1] + g_field[x+1][y-1]) == DELETED_SUM) bonus += 7;
-      if (g_field[x+1][y-1] != EMPTY && g_field[x+2][y-1] != EMPTY && (num + g_field[x+1][y-1] + g_field[x+2][y-1]) == DELETED_SUM) bonus += 5;
+      if (x >= 3 && g_field[calcZ(y-1,x-1)] != EMPTY && g_field[calcZ(y-1,x-2)] != EMPTY && (num + g_field[calcZ(y-1,x-1)] + g_field[calcZ(y-1,x-2)]) == DELETED_SUM) bonus += 5;
+      if (2 <= x && x < FIELD_WIDTH && g_field[calcZ(y-1,x-1)] != EMPTY && g_field[calcZ(y-1,x+1)] != EMPTY && (num + g_field[calcZ(y-1,x-1)] + g_field[calcZ(y-1,x+1)]) == DELETED_SUM) bonus += 7;
+      if (x < FIELD_WIDTH-1 && g_field[calcZ(y-1,x+1)] != EMPTY && g_field[calcZ(y-1,x+2)] != EMPTY && (num + g_field[calcZ(y-1,x+1)] + g_field[calcZ(y-1,x+2)]) == DELETED_SUM) bonus += 5;
     }
 
     return bonus;
@@ -796,7 +662,7 @@ public:
 
     for (int x = 1; x <= FIELD_WIDTH; ++x) {
       for (int y = 2; y < g_putPackLine[x]; ++y) {
-        if (g_field[x][y] != OJAMA) {
+        if (g_field[calcZ(y,x)] != OJAMA) {
           bonus += simpleFilter(y, x);
         }
       }
@@ -838,7 +704,8 @@ public:
     for (int y = 0; y < FIELD_HEIGHT; ++y) {
       for (int x = 1; x <= FIELD_WIDTH; ++x) {
         cin >> t;
-        g_myField[x][FIELD_HEIGHT-y] = t;
+        int z = calcZ(FIELD_HEIGHT-y, x);
+        g_myField[z] = t;
       }
     }
 
@@ -854,7 +721,8 @@ public:
     for (int y = 0; y < FIELD_HEIGHT; ++y) {
       for (int x = 1; x <= FIELD_WIDTH; ++x) {
         cin >> t;
-        g_enemyField[x][FIELD_HEIGHT-y] = t;
+        int z = calcZ(FIELD_HEIGHT-y, x);
+        g_enemyField[z] = t;
         if (t == OJAMA) {
           ojamaCnt++;
         }
@@ -887,10 +755,14 @@ public:
   inline void setPutPackLine(int x) {
     int y = 1;
 
-    while (g_field[x][y] != EMPTY && y < HEIGHT-1) {
+    while (g_field[calcZ(y,x)] != EMPTY && y < HEIGHT-1) {
       ++y;
     }
 
+    if (y > DANGER_LINE) {
+      showField();
+    }
+    assert(y <= DANGER_LINE);
     g_putPackLine[x] = y;
   }
 
@@ -912,10 +784,11 @@ public:
     fprintf(stderr,"\n");
     for (int x = 0; x < WIDTH; ++x) {
       for (int y = 0; y < HEIGHT; ++y) {
-        if (g_field[x][y] == 11) {
+        int z = calcZ(y,x);
+        if (g_field[z] == 11) {
           fprintf(stderr,"B");
         } else {
-          fprintf(stderr,"%d", g_field[x][y]);
+          fprintf(stderr,"%d", g_field[z]);
         }
       }
       fprintf(stderr," %d\n", g_putPackLine[x]);
