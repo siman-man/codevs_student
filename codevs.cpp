@@ -548,14 +548,14 @@ public:
     }
     for (int y = 2; y < g_maxHeight; ++y) {
       if (g_chainCheckRightUpV[y] == g_checkId) deleteCheckDiagonalRightUp(y, 1);
-      if (g_chainCheckRightDownV[y] == g_checkId) deleteCheckDiagonalRightDown(y, 1);
+      deleteCheckDiagonalLeftUp(y, FIELD_WIDTH);
     }
     for (int x = 1; x <= FIELD_WIDTH; ++x) {
       if (g_chainCheckVertical[x] == g_checkId) deleteCheckVertical(x);
     }
-    for (int x = 1; x < FIELD_WIDTH; ++x) {
+    for (int x = 1; x <= FIELD_WIDTH; ++x) {
       if (g_chainCheckRightUpH[x] == g_checkId) deleteCheckDiagonalRightUp(1, x);
-      deleteCheckDiagonalRightDown(g_maxHeight, x);
+      deleteCheckDiagonalLeftUp(1, x);
     }
   }
 
@@ -715,19 +715,17 @@ public:
    * @param [int] sy チェックするy座標
    * @param [int] sx チェックするx座標
    */
-  void deleteCheckDiagonalRightDown(int sy, int sx) {
+  void deleteCheckDiagonalLeftUp(int sy, int sx) {
     int fromY = sy;
     int fromX = sx;
     int toY = sy;
     int toX = sx;
     char sum = g_field[toX][toY];
 
-    while (toX <= FIELD_WIDTH && toY >= 1) {
+    while (toX >= 1 && toY <= g_maxHeight) {
       if (sum < DELETED_SUM) {
-        toY--;
-        toX++;
-
-        if (toY < 0) break;
+        toY++;
+        toX--;
 
         if (sum == 0) {
           fromY = toY;
@@ -743,10 +741,10 @@ public:
         }
       } else {
         sum -= g_field[fromX][fromY];
-        fromY--;
-        fromX++;
+        fromY++;
+        fromX--;
 
-        if (fromX > toX) {
+        if (fromX < toX) {
           toY = fromY;
           toX = fromX;
           sum = g_field[toX][toY];
@@ -755,9 +753,9 @@ public:
 
       if (sum == DELETED_SUM) {
         int i = 0;
-        g_deleteCount += (toX-fromX+1);
-        for (int x = fromX; x <= toX; ++x) {
-          g_packDeleteCount[x][fromY-i] = g_deleteId;
+        g_deleteCount += (fromX-toX+1);
+        for (int x = toX; x <= fromX; ++x) {
+          g_packDeleteCount[x][fromY+i] = g_deleteId;
           i++;
         }
       }
