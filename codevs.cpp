@@ -618,10 +618,9 @@ public:
     int toY = 1;
     char sum = g_field[x][toY];
 
-    while (toY < HEIGHT) {
+    while (toY <= g_maxHeight) {
       if (sum < DELETED_SUM) {
         toY++;
-        if (toY >= HEIGHT) break;
 
         if (sum == 0) {
           fromY = toY;
