@@ -778,9 +778,9 @@ public:
       if (num + g_field[x+1][y-2] == DELETED_SUM) bonus += 9;
     }
     if (y >= 2) {
-      if (g_field[x-1][y-1] != EMPTY && g_field[x-2][y-1] != EMPTY && (num + g_field[x-1][y-1] + g_field[x-2][y-1]) == DELETED_SUM) bonus += 5;
-      if (g_field[x-1][y-1] != EMPTY && g_field[x+1][y-1] != EMPTY && (num + g_field[x-1][y-1] + g_field[x+1][y-1]) == DELETED_SUM) bonus += 7;
-      if (g_field[x+1][y-1] != EMPTY && g_field[x+2][y-1] != EMPTY && (num + g_field[x+1][y-1] + g_field[x+2][y-1]) == DELETED_SUM) bonus += 5;
+      if (g_field[x-1][y-1] != EMPTY && (num + g_field[x-1][y-1] + g_field[x-2][y-1]) == DELETED_SUM) bonus += 5;
+      if (g_field[x-1][y-1] != EMPTY && (num + g_field[x-1][y-1] + g_field[x+1][y-1]) == DELETED_SUM) bonus += 7;
+      if (g_field[x+1][y-1] != EMPTY && (num + g_field[x+1][y-1] + g_field[x+2][y-1]) == DELETED_SUM) bonus += 5;
     }
 
     return bonus;
