@@ -818,7 +818,7 @@ public:
     // [自分の残り思考時間。単位はミリ秒]
     cin >> myRemainTime;
 
-    if (myRemainTime > 90000) {
+    if (myRemainTime >= 60000) {
       BEAM_WIDTH = 3 * BASE_BEAM_WIDTH;
     } else if (myRemainTime < 60000) {
       BEAM_WIDTH = BASE_BEAM_WIDTH / 2;
