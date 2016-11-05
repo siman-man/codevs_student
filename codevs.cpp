@@ -26,10 +26,10 @@ const int CHECK_POWER = 1; // 最大火力を調べる
 
 const int WIN = 9999999;
 
-int BASE_BEAM_WIDTH = 1000;
+int BASE_BEAM_WIDTH = 1200;
 int BEAM_WIDTH = 8000;
 int SEARCH_DEPTH = 10;
-int g_scoreLimit = 300;
+int g_scoreLimit = 400;
 
 /**
  * 乱数生成器
@@ -520,7 +520,9 @@ public:
       value += WIN + 100 * score;
     }
 
-    value += evaluateField();
+    if (chainCnt <= 0) {
+      value += evaluateField();
+    }
 
     for (int x = 1; x <= FIELD_WIDTH; ++x) {
       if (g_putPackLine[x-1] - g_putPackLine[x] >= 4 && g_putPackLine[x+1] - g_putPackLine[x] >= 4) {
