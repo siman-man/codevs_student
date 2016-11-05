@@ -61,7 +61,6 @@ ll g_packDeleteCount[WIDTH][HEIGHT];
 int g_maxHeight;
 
 bool g_chain;
-bool g_enemyPinch;
 
 ll g_zoblishField[WIDTH][HEIGHT][12]; // zoblish hash生成用の乱数テーブル
 
@@ -182,7 +181,6 @@ public:
     }
 
     beforeTime = 180000;
-    g_enemyPinch = false;
 
     readPackInfo();
   }
@@ -871,7 +869,6 @@ public:
     }
     if (ojamaCnt >= 25) {
       g_scoreLimit = 120;
-      g_enemyPinch = true;
     }
 
     cin >> _end_;
