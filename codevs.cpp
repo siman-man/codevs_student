@@ -22,14 +22,15 @@ const char EMPTY = 0; // 空のグリッド
 const char OJAMA = 11; // お邪魔ブロック
 
 const int NORMAL = 0; // 通常モード探索
-const int CHECK_POWER = 1; // 最大火力を調べる
+const int FULL_POWER = 1; // 最大火力を調べる
+const int EVALUATE = 2;
 
 const int WIN = 9999999;
 
-int BASE_BEAM_WIDTH = 1200;
+int BASE_BEAM_WIDTH;
 int BEAM_WIDTH = 8000;
 int SEARCH_DEPTH = 10;
-int g_scoreLimit = 400;
+int g_scoreLimit = 350;
 
 /**
  * 乱数生成器
@@ -52,6 +53,7 @@ struct Pack {
 char g_myField[WIDTH][HEIGHT]; // 自フィールド
 char g_enemyField[WIDTH][HEIGHT]; // 敵フィールド
 char g_field[WIDTH][HEIGHT]; // フィールド
+char g_tempField[WIDTH][HEIGHT];
 
 int g_putPackLine[WIDTH]; // 次にブロックを設置する高さを保持する配列
 int g_tempPutPackLine[WIDTH]; // 一時保存用
@@ -232,6 +234,17 @@ public:
 
     BestAction action = getMyBestAction(turn);
     Command command = action.command;
+    int MNP = action.result.score / 5;
+
+    if (action.result.score >= g_scoreLimit) {
+      BestAction MFA = getMyBestAction(turn, FULL_POWER);
+      int MFP = MFA.result.score / 5;
+      fprintf(stderr,"%2d: MNP=%d,MFP=%d\n", turn, MNP, MFP);
+
+      if (MNP + 20 < MFP) {
+        command = MFA.command;
+      }
+    }
 
     cout << command.pos-1 << " " << command.rot << endl;
     fflush(stderr);
@@ -246,10 +259,29 @@ public:
    *
    * @return [BestAction] 一番良いアクション
    */
-  BestAction getMyBestAction(int turn) {
+  BestAction getMyBestAction(int turn, int mode = NORMAL) {
     memcpy(g_field, g_myField, sizeof(g_myField));
 
-    return getBestAction(turn);
+    BASE_BEAM_WIDTH = 1200;
+    SEARCH_DEPTH = 10;
+
+    switch(mode) {
+      case NORMAL:
+        if (myRemainTime >= 60000) {
+          BEAM_WIDTH = 3 * BASE_BEAM_WIDTH;
+        } else if (myRemainTime < 60000) {
+          BEAM_WIDTH = BASE_BEAM_WIDTH / 2;
+        } else {
+          BEAM_WIDTH = BASE_BEAM_WIDTH;
+        }
+        break;
+      case FULL_POWER:
+        SEARCH_DEPTH = 3;
+        BEAM_WIDTH = 100000;
+        break;
+    }
+
+    return getBestAction(turn, mode);
   }
 
   /**
@@ -259,7 +291,7 @@ public:
    * @param [int] mode 探索の種類
    * @return [BestAction] 一番ベストな行動情報
    */
-   BestAction getBestAction(int turn, int mode = NORMAL) {
+   BestAction getBestAction(int turn, int mode) {
     Node root;
     memcpy(root.field, g_field, sizeof(g_field));
     BestAction bestAction;
@@ -290,6 +322,7 @@ public:
               cand.command = (depth == 0)? Command(x, rot) : node.command;
 
               if (g_maxHeight < DANGER_LINE) {
+                if (mode == NORMAL && depth <= 2) cand.result.value += evaluate();
                 memcpy(cand.field, g_field, sizeof(g_field));
                 pque.push(cand);
               }
@@ -489,6 +522,30 @@ public:
     }
   }
 
+  int evaluate() {
+    int maxValue = 0;
+    memcpy(g_tempField, g_field, sizeof(g_field));
+
+    for (int x = 1; x <= FIELD_WIDTH; x++) {
+      int y = g_putPackLine[x];
+
+      for (char num = 1; num <= 9; num++) {
+        g_checkId++;
+        g_field[x][y] = num;
+        setChainCheckId(y, x);
+        g_putPackLine[x]= y+1;
+
+        Result result = simulate(0, EVALUATE);
+        maxValue = max(maxValue, result.score);
+
+        memcpy(g_field, g_tempField, sizeof(g_tempField));
+        g_putPackLine[x] = y;
+      }
+    }
+
+    return maxValue;
+  }
+
   /**
    * 連鎖処理のシミュレーションを行う
    *
@@ -514,6 +571,22 @@ public:
       value += floor(pow(1.6, chainCnt)) * (g_deleteCount/2);
     }
 
+    if (mode == EVALUATE) {
+      return Result(value, score);
+    }
+
+    if (chainCnt >= 2) {
+      g_chain = true;
+    }
+
+    if (mode == FULL_POWER) {
+      if (chainCnt <= 3) {
+        g_chain = false;
+      }
+      value += 100 * score;
+      return Result(value, score);
+    }
+
     if (score >= g_scoreLimit) {
       value += WIN + 100 * score;
     }
@@ -526,14 +599,6 @@ public:
       if (g_putPackLine[x-1] - g_putPackLine[x] >= 4 && g_putPackLine[x+1] - g_putPackLine[x] >= 4) {
         value -= 5;
       }
-    }
-
-    if (chainCnt >= 2 || (depth > 0 && 1 <= chainCnt && chainCnt <= 2)) {
-      g_chain = true;
-    }
-
-    if (mode == CHECK_POWER) {
-      value += 100 * score;
     }
 
     return Result(value, score);
@@ -821,15 +886,8 @@ public:
     // [自分の残り思考時間。単位はミリ秒]
     cin >> myRemainTime;
 
-    if (myRemainTime >= 60000) {
-      BEAM_WIDTH = 3 * BASE_BEAM_WIDTH;
-    } else if (myRemainTime < 60000) {
-      BEAM_WIDTH = BASE_BEAM_WIDTH / 2;
-    } else {
-      BEAM_WIDTH = BASE_BEAM_WIDTH;
-    }
 
-    fprintf(stderr,"%d: myRemainTime = %d, use time = %d\n", turn, myRemainTime, beforeTime - myRemainTime);
+    fprintf(stderr,"%2d:MRT=%d,UT=%d\n", turn, myRemainTime, beforeTime - myRemainTime);
     beforeTime = myRemainTime;
 
     // [自分のお邪魔ストック]
