@@ -282,16 +282,16 @@ public:
           for (int rot = 0; rot < 4; rot++) {
 
             if (putPack(x, rot, pack)) {
-              Node cand;
               Result result = simulate(depth);
-              if (!result.chain) result.value += evaluateField();
-              if (result.score >= g_scoreLimit || mode == CHECK_POWER) result.value += 100 * result.score;
-              cand.result = result;
-              cand.chain = result.chain;
-              cand.command = (depth == 0)? Command(x, rot) : node.command;
 
               if (g_maxHeight < DANGER_LINE) {
+                Node cand;
                 memcpy(cand.field, g_field, sizeof(g_field));
+                if (!result.chain) result.value += evaluateField();
+                if (result.score >= g_scoreLimit || mode == CHECK_POWER) result.value += 100 * result.score;
+                cand.result = result;
+                cand.chain = result.chain;
+                cand.command = (depth == 0)? Command(x, rot) : node.command;
                 pque.push(cand);
               }
             }
