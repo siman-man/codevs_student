@@ -283,7 +283,9 @@ public:
 
             if (putPack(x, rot, pack)) {
               Node cand;
-              Result result = simulate(depth, mode);
+              Result result = simulate(depth);
+              if (!result.chain) result.value += evaluateField();
+              if (result.score >= g_scoreLimit || mode == CHECK_POWER) result.value += 100 * result.score;
               cand.result = result;
               cand.chain = result.chain;
               cand.command = (depth == 0)? Command(x, rot) : node.command;
@@ -495,7 +497,7 @@ public:
    * @param [int] 探索の種別
    * @return [Result] 連鎖処理の結果
    */
-  Result simulate(int depth, int mode) {
+  Result simulate(int depth) {
     int chainCnt = 0;
     int value = 0;
     int score = 0;
@@ -510,24 +512,6 @@ public:
       chainCnt++;
       score += floor(pow(1.3, chainCnt)) * (g_deleteCount/2);
       value += floor(pow(1.6, chainCnt)) * (g_deleteCount/2);
-    }
-
-    if (score >= g_scoreLimit) {
-      value += 100 * score;
-    }
-
-    if (chainCnt <= 0) {
-      value += evaluateField();
-    }
-
-    for (int x = 1; x <= FIELD_WIDTH; ++x) {
-      if (g_putPackLine[x-1] - g_putPackLine[x] >= 4 && g_putPackLine[x+1] - g_putPackLine[x] >= 4) {
-        value -= 5;
-      }
-    }
-
-    if (mode == CHECK_POWER) {
-      value += 100 * score;
     }
 
     return Result(value, score, (chainCnt >= 2 || (depth > 0 && chainCnt >= 1)));
@@ -790,6 +774,12 @@ public:
    */
   int evaluateField() {
     int bonus = 0;
+
+    for (int x = 1; x <= FIELD_WIDTH; ++x) {
+      if (g_putPackLine[x-1] - g_putPackLine[x] >= 4 && g_putPackLine[x+1] - g_putPackLine[x] >= 4) {
+        bonus -= 5;
+      }
+    }
 
     for (int x = 1; x <= FIELD_WIDTH; ++x) {
       for (int y = 2; y < g_putPackLine[x]; ++y) {
