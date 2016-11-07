@@ -24,8 +24,6 @@ const char OJAMA = 11; // お邪魔ブロック
 const int NORMAL = 0; // 通常モード探索
 const int CHECK_POWER = 1; // 最大火力を調べる
 
-const int WIN = 9999999;
-
 int BASE_BEAM_WIDTH = 1200;
 int BEAM_WIDTH = 8000;
 int SEARCH_DEPTH = 10;
@@ -305,7 +303,7 @@ public:
       for (int j = 0; j < BEAM_WIDTH && !pque.empty(); j++) {
         Node node = pque.top(); pque.pop();
 
-        if (node.result.value >= WIN) {
+        if (node.result.score >= g_scoreLimit) {
           return BestAction(node.command, node.result);
         }
 
@@ -515,7 +513,7 @@ public:
     }
 
     if (score >= g_scoreLimit) {
-      value += WIN + 100 * score;
+      value += 100 * score;
     }
 
     if (chainCnt <= 0) {
