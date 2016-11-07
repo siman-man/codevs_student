@@ -247,6 +247,14 @@ public:
   BestAction getMyBestAction(int turn) {
     memcpy(g_field, g_myField, sizeof(g_myField));
 
+    if (myRemainTime >= 60000) {
+      BEAM_WIDTH = 3 * BASE_BEAM_WIDTH;
+    } else if (myRemainTime < 60000) {
+      BEAM_WIDTH = BASE_BEAM_WIDTH / 2;
+    } else {
+      BEAM_WIDTH = BASE_BEAM_WIDTH;
+    }
+
     return getBestAction(turn);
   }
 
@@ -805,15 +813,7 @@ public:
     // [自分の残り思考時間。単位はミリ秒]
     cin >> myRemainTime;
 
-    if (myRemainTime >= 60000) {
-      BEAM_WIDTH = 3 * BASE_BEAM_WIDTH;
-    } else if (myRemainTime < 60000) {
-      BEAM_WIDTH = BASE_BEAM_WIDTH / 2;
-    } else {
-      BEAM_WIDTH = BASE_BEAM_WIDTH;
-    }
-
-    fprintf(stderr,"%d: myRemainTime = %d, use time = %d\n", turn, myRemainTime, beforeTime - myRemainTime);
+    fprintf(stderr,"%2d:MRT=%d,UT=%d\n", turn, myRemainTime, beforeTime - myRemainTime);
     beforeTime = myRemainTime;
 
     // [自分のお邪魔ストック]
