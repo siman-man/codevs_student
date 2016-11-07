@@ -60,8 +60,6 @@ ll g_packDeleteCount[WIDTH][HEIGHT];
 
 int g_maxHeight;
 
-bool g_chain;
-
 ll g_zoblishField[WIDTH][HEIGHT][12]; // zoblish hash生成用の乱数テーブル
 
 ll g_chainCheckHorizontal[HEIGHT]; // 連鎖判定フィールド
@@ -91,10 +89,12 @@ struct Command {
 struct Result {
   int value;
   int score;
+  bool chain;
 
-  Result(int value = 0, int score = 0) {
+  Result(int value = 0, int score = 0, bool chain = false) {
     this->value = value;
     this->score = score;
+    this->chain = chain;
   }
 };
 
@@ -285,8 +285,9 @@ public:
 
             if (putPack(x, rot, pack)) {
               Node cand;
-              cand.result = simulate(depth, mode);
-              cand.chain = g_chain;
+              Result result = simulate(depth, mode);
+              cand.result = result;
+              cand.chain = result.chain;
               cand.command = (depth == 0)? Command(x, rot) : node.command;
 
               if (g_maxHeight < DANGER_LINE) {
@@ -500,7 +501,6 @@ public:
     int chainCnt = 0;
     int value = 0;
     int score = 0;
-    g_chain = false;
 
     while (true) {
       updateMaxHeight();
@@ -528,15 +528,11 @@ public:
       }
     }
 
-    if (chainCnt >= 2 || (depth > 0 && 1 <= chainCnt && chainCnt <= 2)) {
-      g_chain = true;
-    }
-
     if (mode == CHECK_POWER) {
       value += 100 * score;
     }
 
-    return Result(value, score);
+    return Result(value, score, (chainCnt >= 2 || (depth > 0 && chainCnt >= 1)));
   }
 
   /**
