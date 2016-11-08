@@ -24,10 +24,10 @@ const char OJAMA = 11; // お邪魔ブロック
 const int NORMAL = 0; // 通常モード探索
 const int CHECK_POWER = 1; // 最大火力を調べる
 
-int BASE_BEAM_WIDTH = 1200;
 int BEAM_WIDTH = 8000;
+int BASE_BEAM_WIDTH = 200;
 int SEARCH_DEPTH = 10;
-int g_scoreLimit = 400;
+int g_scoreLimit = 350;
 
 /**
  * 乱数生成器
@@ -97,11 +97,13 @@ struct Result {
 };
 
 struct BestAction {
-  Command command;
+  int fireTurn;
+  vector<Command> commands;
   Result result;
 
-  BestAction(Command command = Command(), Result result = Result()) {
-    this->command = command;
+  BestAction(int fireTurn = MAX_TURN, vector<Command> commands = vector<Command>(), Result result = Result()) {
+    this->fireTurn = fireTurn;
+    this->commands = commands;
     this->result = result;
   }
 };
@@ -109,7 +111,7 @@ struct BestAction {
 struct Node {
   Result result;
   bool chain;
-  Command command;
+  vector<Command> commands;
   char field[WIDTH][HEIGHT];
 
   Node () {
@@ -134,6 +136,10 @@ struct Node {
     return result.value < n.result.value;
   }
 };
+
+vector<Command> g_bestCommands;
+int g_fireTurn;
+int g_fireScore;
 
 class Codevs {
 public:
@@ -226,13 +232,50 @@ public:
 
     if (myOjamaStock > 0) {
       fillOjama(turn, myOjamaStock);
+      g_bestCommands.clear();
+      g_fireScore = 0;
+      g_fireTurn = MAX_TURN;
     }
+    /*
+    if (myOjamaStock >= 6 || turn >= 25) {
+      cout << -3 << " " << 0 << endl;
+    }
+    */
 
     BestAction action = getMyBestAction(turn);
-    Command command = action.command;
+    Command command = (action.commands.size() > 0)? action.commands[0] : Command(-3, 0);
+    int MNP = action.result.score;
+
+    if (action.result.score >= g_scoreLimit && (g_fireTurn > action.fireTurn || (g_fireTurn == action.fireTurn && g_fireScore < action.result.score))) {
+      assert(action.fireTurn != MAX_TURN);
+      g_fireTurn = action.fireTurn;
+      g_fireScore = action.result.score;
+      g_bestCommands = action.commands;
+      command = g_bestCommands[0];
+      g_bestCommands.erase(g_bestCommands.begin());
+    } else if (g_bestCommands.size() > 0) {
+      assert(g_fireScore != 0);
+      assert(g_fireTurn != MAX_TURN);
+      command = g_bestCommands[0];
+      g_bestCommands.erase(g_bestCommands.begin());
+    } else {
+      g_fireScore = 0;
+      g_fireTurn = MAX_TURN;
+    }
+
+    if (g_fireTurn < MAX_TURN) {
+      fprintf(stderr,"%02d: MNP=%d, MT=%d\n", turn, MNP, action.fireTurn);
+      fprintf(stderr,"%02d: FS=%d, FT=%d\n", turn, g_fireScore, g_fireTurn);
+    }
 
     cout << command.pos-1 << " " << command.rot << endl;
     fflush(stderr);
+
+    if (g_fireTurn != MAX_TURN && g_fireTurn == turn) {
+      g_bestCommands.clear();
+      g_fireScore = 0;
+      g_fireTurn = MAX_TURN;
+    }
 
     if (myOjamaStock > 0) {
       cleanOjama(turn, myOjamaStock);
@@ -271,65 +314,79 @@ public:
     BestAction bestAction;
     int maxValue = -9999;
 
-    queue<Node> que;
-    que.push(root);
-
     unordered_map<ll, bool> checkNodeList;
 
-    for (int depth = 0; depth < SEARCH_DEPTH; depth++) {
-      priority_queue<Node, vector<Node>, greater<Node> > pque;
-      Pack pack = g_packs[turn + depth];
+    BEAM_WIDTH = 400;
+    SEARCH_DEPTH = 12;
+    int cnt = (myOjamaStock > 0)? 1 : 9;
+    if (myOjamaStock > 0) {
+      BEAM_WIDTH = 3 * BASE_BEAM_WIDTH;
+    }
 
-      while (!que.empty()) {
-        Node node = que.front(); que.pop();
-        memcpy(g_field, node.field, sizeof(node.field));
-        updatePutPackLine();
-        memcpy(g_tempPutPackLine, g_putPackLine, sizeof(g_putPackLine));
+    for (int i = 0; i < cnt; i++) {
+      queue<Node> que;
+      que.push(root);
+      bool searchFlag = true;
 
-        for (int x = -1; x <= FIELD_WIDTH; ++x) {
-          for (int rot = 0; rot < 4; rot++) {
+      for (int depth = 0; depth < SEARCH_DEPTH && searchFlag; depth++) {
+        priority_queue<Node, vector<Node>, greater<Node> > pque;
+        Pack pack = g_packs[turn + depth];
 
-            if (putPack(x, rot, pack)) {
-              Result result = simulate(depth);
+        while (!que.empty()) {
+          Node node = que.front(); que.pop();
+          memcpy(g_field, node.field, sizeof(node.field));
+          updatePutPackLine();
+          memcpy(g_tempPutPackLine, g_putPackLine, sizeof(g_putPackLine));
 
-              if (g_maxHeight < DANGER_LINE) {
-                Node cand;
-                memcpy(cand.field, g_field, sizeof(g_field));
-                if (!result.chain) result.value += evaluateField();
-                if (result.score >= g_scoreLimit || mode == CHECK_POWER) result.value += 100 * result.score;
-                cand.result = result;
-                cand.chain = result.chain;
-                cand.command = (depth == 0)? Command(x, rot) : node.command;
-                pque.push(cand);
+          for (int x = -1; x <= FIELD_WIDTH; ++x) {
+            for (int rot = 0; rot < 4; rot++) {
+
+              if (putPack(x, rot, pack)) {
+                Result result = simulate(depth);
+
+                if (g_maxHeight < DANGER_LINE) {
+                  Node cand;
+                  memcpy(cand.field, g_field, sizeof(g_field));
+                  if (!result.chain) result.value += evaluateField();
+                  if (result.score >= g_scoreLimit || mode == CHECK_POWER) result.value += 100 * result.score;
+                  cand.result = result;
+                  cand.chain = result.chain;
+                  cand.commands = node.commands;
+                  cand.commands.push_back(Command(x, rot));
+                  pque.push(cand);
+                }
               }
-            }
 
-            memcpy(g_field, node.field, sizeof(node.field));
-            memcpy(g_putPackLine, g_tempPutPackLine, sizeof(g_tempPutPackLine));
+              memcpy(g_field, node.field, sizeof(node.field));
+              memcpy(g_putPackLine, g_tempPutPackLine, sizeof(g_tempPutPackLine));
+            }
           }
         }
-      }
 
-      for (int j = 0; j < BEAM_WIDTH && !pque.empty(); j++) {
-        Node node = pque.top(); pque.pop();
+        for (int j = 0; j < BEAM_WIDTH && !pque.empty(); j++) {
+          Node node = pque.top(); pque.pop();
 
-        if (node.result.score >= g_scoreLimit) {
-          return BestAction(node.command, node.result);
-        }
+          if (node.result.score >= g_scoreLimit && maxValue < node.result.value) {
+            bestAction = BestAction(turn+depth, node.commands, node.result);
+            maxValue = node.result.value;
+            searchFlag = false;
+            break;
+          }
 
-        if (maxValue < node.result.value) {
-          maxValue = node.result.value;
-          bestAction = BestAction(node.command, node.result);
-        }
+          if (maxValue < node.result.value) {
+            maxValue = node.result.value;
+            bestAction = BestAction(MAX_TURN, node.commands, node.result);
+          }
 
-        if (depth < SEARCH_DEPTH-1) {
-          ll hash = node.hashCode();
+          if (depth < SEARCH_DEPTH-1) {
+            ll hash = node.hashCode();
 
-          if (!checkNodeList[hash] && !node.chain) {
-            checkNodeList[hash] = true;
-            que.push(node);
-          } else {
-            j--;
+            if (!checkNodeList[hash] && !node.chain) {
+              if (depth > 2) checkNodeList[hash] = true;
+              que.push(node);
+            } else {
+              j--;
+            }
           }
         }
       }
