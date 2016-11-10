@@ -24,10 +24,19 @@ const char OJAMA = 11; // お邪魔ブロック
 const int NORMAL = 0; // 通常モード探索
 const int CHECK_POWER = 1; // 最大火力を調べる
 
-int BASE_BEAM_WIDTH = 700;
+int BASE_BEAM_WIDTH = 600;
 int BEAM_WIDTH = 8000;
 int SEARCH_DEPTH = 18;
 int g_scoreLimit = 600;
+
+const int BEAM_WIDTH_LIST[21] = {
+  900, 900, 900, 900, 900,
+  800, 800, 800, 800, 800,
+  700, 700, 700, 700, 700,
+  600, 600, 600, 600, 600,
+  600
+};
+//const int BEAM_WIDTH_LIST[21] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
 
 /**
  * 乱数生成器
@@ -71,6 +80,8 @@ ll g_checkId;
 
 ll g_deleteId;
 int g_deleteCount;
+int g_fireScore;
+int g_fireTurn;
 
 Pack g_packs[MAX_TURN]; // パック一覧
 Pack g_ojamaPacks[MAX_TURN]; // お邪魔で埋め尽くされたパック一覧
@@ -98,12 +109,12 @@ struct Result {
 };
 
 struct BestAction {
-  Command command;
+  vector<Command> commands;
   Result result;
   int fireTurn;
 
-  BestAction(Command command = Command(), Result result = Result(), int fireTurn = MAX_TURN) {
-    this->command = command;
+  BestAction(vector<Command> commands = vector<Command>(), Result result = Result(), int fireTurn = MAX_TURN) {
+    this->commands = commands;
     this->result = result;
     this->fireTurn = fireTurn;
   }
@@ -112,7 +123,7 @@ struct BestAction {
 struct Node {
   Result result;
   bool chain;
-  Command command;
+  vector<Command> commands;
   char field[WIDTH][HEIGHT];
 
   Node () {
@@ -137,6 +148,8 @@ struct Node {
     return result.value < n.result.value;
   }
 };
+
+vector<Command> g_bestCommands;
 
 class Codevs {
 public:
@@ -172,6 +185,7 @@ public:
 
     g_checkId = 0;
     g_deleteId = 0;
+    resetHoldAction();
 
     for (int x = 0; x < WIDTH; ++x) {
       for (int y = 0; y < HEIGHT; ++y) {
@@ -229,13 +243,31 @@ public:
 
     if (myOjamaStock > 0) {
       fillOjama(turn, myOjamaStock);
+      resetHoldAction();
     }
 
     BestAction action = getMyBestAction(turn);
-    Command command = action.command;
+    Command command = action.commands[0];
     int MNP = action.result.score;
+    int diff = g_fireTurn - action.fireTurn;
+    bool changeble = 100 * diff + MNP > g_fireScore;
+
+    if (changeble && MNP >= g_scoreLimit && ((g_fireTurn > action.fireTurn) || (g_fireTurn == action.fireTurn && g_fireScore < MNP))) {
+      assert(action.fireTurn != MAX_TURN);
+      holdAction(action);
+      command = g_bestCommands[0];
+      g_bestCommands.erase(g_bestCommands.begin());
+    } else if (g_bestCommands.size() > 0) {
+      assert(g_fireScore != 0);
+      assert(g_fireTurn != MAX_TURN);
+      command = g_bestCommands[0];
+      g_bestCommands.erase(g_bestCommands.begin());
+    } else {
+      resetHoldAction();
+    }
 
     fprintf(stderr,"%2d: MNP=%d, FT=%d\n", turn, MNP, action.fireTurn);
+    fprintf(stderr,"%2d:  FS=%d, FT=%d\n", turn, g_fireScore, g_fireTurn);
 
     cout << command.pos-1 << " " << command.rot << endl;
     fflush(stderr);
@@ -243,6 +275,21 @@ public:
     if (myOjamaStock > 0) {
       cleanOjama(turn, myOjamaStock);
     }
+    if (g_fireTurn == turn) {
+      resetHoldAction();
+    }
+  }
+
+  void holdAction(BestAction action) {
+    g_fireScore = action.result.score;
+    g_fireTurn = action.fireTurn;
+    g_bestCommands = action.commands;
+  }
+
+  void resetHoldAction() {
+    g_fireScore = 0;
+    g_fireTurn = MAX_TURN;
+    g_bestCommands.clear();
   }
 
   /**
@@ -252,6 +299,16 @@ public:
    */
   BestAction getMyBestAction(int turn) {
     memcpy(g_field, g_myField, sizeof(g_myField));
+
+    if (g_fireTurn != MAX_TURN) {
+      assert(g_fireTurn >= turn);
+      SEARCH_DEPTH = min(18, max(4, g_fireTurn-turn+1));
+      assert(1 <= SEARCH_DEPTH && SEARCH_DEPTH <= 20);
+      BASE_BEAM_WIDTH = BEAM_WIDTH_LIST[SEARCH_DEPTH];
+    } else {
+      SEARCH_DEPTH = 18;
+      BASE_BEAM_WIDTH = 600;
+    }
 
     if (myRemainTime >= 60000) {
       BEAM_WIDTH = 3 * BASE_BEAM_WIDTH;
@@ -307,7 +364,8 @@ public:
                 if (result.score >= g_scoreLimit || mode == CHECK_POWER) result.value += 100 * result.score;
                 cand.result = result;
                 cand.chain = result.chain;
-                cand.command = (depth == 0)? Command(x, rot) : node.command;
+                cand.commands = node.commands;
+                cand.commands.push_back(Command(x, rot));
                 pque.push(cand);
               }
             }
@@ -322,12 +380,12 @@ public:
         Node node = pque.top(); pque.pop();
 
         if (node.result.score >= g_scoreLimit) {
-          return BestAction(node.command, node.result, turn+depth);
+          return BestAction(node.commands, node.result, turn+depth);
         }
 
         if (maxValue < node.result.value) {
           maxValue = node.result.value;
-          bestAction = BestAction(node.command, node.result, turn+depth);
+          bestAction = BestAction(node.commands, node.result, turn+depth);
         }
 
         if (depth < SEARCH_DEPTH-1) {
@@ -780,57 +838,6 @@ public:
         }
       }
     }
-  }
-
-  int simpleFilter(int y, int x) {
-    int bonus = 0;
-    char num = g_field[x][y];
-
-    if (y >= 4) {
-      if (num + g_field[x][y-3] == DELETED_SUM) bonus += 2;
-      if (num + g_field[x-1][y-3] == DELETED_SUM) bonus += 6;
-      if (num + g_field[x+1][y-3] == DELETED_SUM) bonus += 6;
-    }
-    if (y >= 3) {
-      if (num + g_field[x][y-2] == DELETED_SUM) bonus += 6;
-      if (num + g_field[x-1][y-2] == DELETED_SUM) bonus += 10;
-      if (num + g_field[x+1][y-2] == DELETED_SUM) bonus += 10;
-
-      if (g_field[x-1][y-2] != EMPTY && g_field[x-2][y-2] != EMPTY && (num + g_field[x-1][y-2] + g_field[x-2][y-2]) == DELETED_SUM) bonus += 3;
-      if (g_field[x+1][y-2] != EMPTY && g_field[x+2][y-2] != EMPTY && (num + g_field[x+1][y-2] + g_field[x+2][y-2]) == DELETED_SUM) bonus += 3;
-    }
-    if (y >= 2) {
-      if (g_field[x-1][y-1] != EMPTY && (num + g_field[x-1][y-1] + g_field[x-2][y-1]) == DELETED_SUM) bonus += 5;
-      if (g_field[x-1][y-1] != EMPTY && (num + g_field[x-1][y-1] + g_field[x+1][y-1]) == DELETED_SUM) bonus += 5;
-      if (g_field[x+1][y-1] != EMPTY && (num + g_field[x+1][y-1] + g_field[x+2][y-1]) == DELETED_SUM) bonus += 5;
-    }
-
-    return bonus;
-  }
-
-  /**
-   * 盤面の評価を行う
-   *
-   * @return [int] 盤面の評価値
-   */
-  int evaluateField() {
-    int bonus = 0;
-
-    for (int x = 1; x <= FIELD_WIDTH; ++x) {
-      if (g_putPackLine[x-1] - g_putPackLine[x] >= 4 && g_putPackLine[x+1] - g_putPackLine[x] >= 4) {
-        bonus -= 5;
-      }
-    }
-
-    for (int x = 1; x <= FIELD_WIDTH; ++x) {
-      for (int y = 2; y < g_putPackLine[x]; ++y) {
-        if (g_field[x][y] != OJAMA) {
-          bonus += simpleFilter(y, x);
-        }
-      }
-    }
-
-    return bonus;
   }
 
   /**
