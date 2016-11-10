@@ -24,10 +24,10 @@ const char OJAMA = 11; // お邪魔ブロック
 const int NORMAL = 0; // 通常モード探索
 const int CHECK_POWER = 1; // 最大火力を調べる
 
-int BASE_BEAM_WIDTH = 1200;
+int BASE_BEAM_WIDTH = 700;
 int BEAM_WIDTH = 8000;
-int SEARCH_DEPTH = 10;
-int g_scoreLimit = 400;
+int SEARCH_DEPTH = 18;
+int g_scoreLimit = 600;
 
 /**
  * 乱数生成器
@@ -50,6 +50,7 @@ struct Pack {
 char g_myField[WIDTH][HEIGHT]; // 自フィールド
 char g_enemyField[WIDTH][HEIGHT]; // 敵フィールド
 char g_field[WIDTH][HEIGHT]; // フィールド
+char g_tempField[WIDTH][HEIGHT];
 
 int g_putPackLine[WIDTH]; // 次にブロックを設置する高さを保持する配列
 int g_tempPutPackLine[WIDTH]; // 一時保存用
@@ -99,10 +100,12 @@ struct Result {
 struct BestAction {
   Command command;
   Result result;
+  int fireTurn;
 
-  BestAction(Command command = Command(), Result result = Result()) {
+  BestAction(Command command = Command(), Result result = Result(), int fireTurn = MAX_TURN) {
     this->command = command;
     this->result = result;
+    this->fireTurn = fireTurn;
   }
 };
 
@@ -230,6 +233,9 @@ public:
 
     BestAction action = getMyBestAction(turn);
     Command command = action.command;
+    int MNP = action.result.score;
+
+    fprintf(stderr,"%2d: MNP=%d, FT=%d\n", turn, MNP, action.fireTurn);
 
     cout << command.pos-1 << " " << command.rot << endl;
     fflush(stderr);
@@ -295,7 +301,9 @@ public:
               if (g_maxHeight < DANGER_LINE) {
                 Node cand;
                 memcpy(cand.field, g_field, sizeof(g_field));
-                if (!result.chain) result.value += evaluateField();
+                if (!result.chain) {
+                  result.value += evaluate();
+                }
                 if (result.score >= g_scoreLimit || mode == CHECK_POWER) result.value += 100 * result.score;
                 cand.result = result;
                 cand.chain = result.chain;
@@ -314,12 +322,12 @@ public:
         Node node = pque.top(); pque.pop();
 
         if (node.result.score >= g_scoreLimit) {
-          return BestAction(node.command, node.result);
+          return BestAction(node.command, node.result, turn+depth);
         }
 
         if (maxValue < node.result.value) {
           maxValue = node.result.value;
-          bestAction = BestAction(node.command, node.result);
+          bestAction = BestAction(node.command, node.result, turn+depth);
         }
 
         if (depth < SEARCH_DEPTH-1) {
@@ -496,6 +504,31 @@ public:
         }
       }
     }
+  }
+
+  int evaluate() {
+    int maxValue = 0;
+    memcpy(g_tempField, g_field, sizeof(g_field));
+
+    for (int x = 2; x <= 2; x++) {
+    //for (int x = 1; x <= FIELD_WIDTH; x++) {
+      int y = g_putPackLine[x];
+
+      for (char num = 1; num <= 9; num++) {
+        g_checkId++;
+        g_field[x][y] = num;
+        setChainCheckId(y, x);
+        g_putPackLine[x]= y+1;
+
+        Result result = simulate(0);
+        maxValue = max(maxValue, result.score);
+
+        memcpy(g_field, g_tempField, sizeof(g_tempField));
+        g_putPackLine[x] = y;
+      }
+    }
+
+    return maxValue;
   }
 
   /**
