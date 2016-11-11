@@ -255,7 +255,7 @@ public:
 
     if (myRemainTime >= 60000) {
       BEAM_WIDTH = 3 * BASE_BEAM_WIDTH;
-    } else if (myRemainTime < 60000) {
+    } else if (myRemainTime < 30000) {
       BEAM_WIDTH = BASE_BEAM_WIDTH / 2;
     } else {
       BEAM_WIDTH = BASE_BEAM_WIDTH;
