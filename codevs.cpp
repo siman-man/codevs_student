@@ -782,32 +782,6 @@ public:
     }
   }
 
-  int simpleFilter(int y, int x) {
-    int bonus = 0;
-    char num = g_field[x][y];
-
-    if (y >= 4) {
-      if (num + g_field[x][y-3] == DELETED_SUM) bonus += 2;
-      if (num + g_field[x-1][y-3] == DELETED_SUM) bonus += 6;
-      if (num + g_field[x+1][y-3] == DELETED_SUM) bonus += 6;
-    }
-    if (y >= 3) {
-      if (num + g_field[x][y-2] == DELETED_SUM) bonus += 6;
-      if (num + g_field[x-1][y-2] == DELETED_SUM) bonus += 10;
-      if (num + g_field[x+1][y-2] == DELETED_SUM) bonus += 10;
-
-      if (g_field[x-1][y-2] != EMPTY && g_field[x-2][y-2] != EMPTY && (num + g_field[x-1][y-2] + g_field[x-2][y-2]) == DELETED_SUM) bonus += 3;
-      if (g_field[x+1][y-2] != EMPTY && g_field[x+2][y-2] != EMPTY && (num + g_field[x+1][y-2] + g_field[x+2][y-2]) == DELETED_SUM) bonus += 3;
-    }
-    if (y >= 2) {
-      if (g_field[x-1][y-1] != EMPTY && (num + g_field[x-1][y-1] + g_field[x-2][y-1]) == DELETED_SUM) bonus += 5;
-      if (g_field[x-1][y-1] != EMPTY && (num + g_field[x-1][y-1] + g_field[x+1][y-1]) == DELETED_SUM) bonus += 5;
-      if (g_field[x+1][y-1] != EMPTY && (num + g_field[x+1][y-1] + g_field[x+2][y-1]) == DELETED_SUM) bonus += 5;
-    }
-
-    return bonus;
-  }
-
   /**
    * 盤面の評価を行う
    *
@@ -819,14 +793,6 @@ public:
     for (int x = 1; x <= FIELD_WIDTH; ++x) {
       if (g_putPackLine[x-1] - g_putPackLine[x] >= 4 && g_putPackLine[x+1] - g_putPackLine[x] >= 4) {
         bonus -= 5;
-      }
-    }
-
-    for (int x = 1; x <= FIELD_WIDTH; ++x) {
-      for (int y = 2; y < g_putPackLine[x]; ++y) {
-        if (g_field[x][y] != OJAMA) {
-          bonus += simpleFilter(y, x);
-        }
       }
     }
 
