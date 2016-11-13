@@ -290,7 +290,7 @@ public:
         updatePutPackLine();
         memcpy(g_tempPutPackLine, g_putPackLine, sizeof(g_putPackLine));
 
-        for (int x = -1; x <= FIELD_WIDTH; ++x) {
+        for (int x = 1; x <= FIELD_WIDTH-2; ++x) {
           for (int rot = 0; rot < 4; rot++) {
 
             if (putPack(x, rot, pack)) {
