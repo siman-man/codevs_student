@@ -282,7 +282,7 @@ public:
 
     for (int depth = 0; depth < SEARCH_DEPTH; depth++) {
       priority_queue<Node, vector<Node>, greater<Node> > pque;
-      Pack pack = g_packs[turn + depth];
+      Pack pack = g_packs[turn+depth];
 
       while (!que.empty()) {
         Node node = que.front(); que.pop();
@@ -508,7 +508,6 @@ public:
     memcpy(g_tempField, g_field, sizeof(g_field));
 
     for (int x = 2; x <= 2; x++) {
-    //for (int x = 1; x <= FIELD_WIDTH; x++) {
       int y = g_putPackLine[x];
 
       for (char num = 1; num <= 9; num++) {
@@ -531,8 +530,7 @@ public:
   /**
    * 連鎖処理のシミュレーションを行う
    *
-   * @param [int] 評価値
-   * @param [int] 探索の種別
+   * @param [int] 現在探索している深さ
    * @return [Result] 連鎖処理の結果
    */
   Result simulate(int depth) {
@@ -844,9 +842,6 @@ public:
       }
     }
 
-    if (ojamaCnt >= 50) {
-      g_scoreLimit = 90;
-    }
     if (ojamaCnt >= 25) {
       g_scoreLimit = 120;
     }
@@ -877,7 +872,7 @@ public:
   }
 
   /**
-   * フィールドの最大の高さと最低の高さを更新する
+   * フィールドの最大の高さを更新する
    */
   inline void updateMaxHeight() {
     g_maxHeight = 0;
