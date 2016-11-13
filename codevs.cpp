@@ -55,7 +55,7 @@ char g_tempField[WIDTH][HEIGHT];
 int g_putPackLine[WIDTH]; // 次にブロックを設置する高さを保持する配列
 int g_tempPutPackLine[WIDTH]; // 一時保存用
 
-ll g_packDeleteCount[WIDTH][HEIGHT];
+ll g_packDeleteChecker[WIDTH][HEIGHT];
 
 int g_maxHeight;
 
@@ -163,7 +163,7 @@ public:
     memset(g_chainCheckRightUpV, -1, sizeof(g_chainCheckRightUpV));
     memset(g_chainCheckLeftUpH, -1, sizeof(g_chainCheckLeftUpH));
     memset(g_chainCheckLeftUpV, -1, sizeof(g_chainCheckLeftUpV));
-    memset(g_packDeleteCount, -1, sizeof(g_packDeleteCount));
+    memset(g_packDeleteChecker, -1, sizeof(g_packDeleteChecker));
     memset(g_putPackLine, -1, sizeof(g_putPackLine));
 
     g_putPackLine[0] = HEIGHT;
@@ -354,7 +354,7 @@ public:
       int limitY = g_putPackLine[x];
 
       for (int y = 1; y < limitY; ++y) {
-        if (g_packDeleteCount[x][y] == g_deleteId) {
+        if (g_packDeleteChecker[x][y] == g_deleteId) {
           g_field[x][y] = EMPTY;
           fallCnt++;
           g_putPackLine[x]--;
@@ -612,7 +612,7 @@ public:
         assert(0 <= fromX && toX < WIDTH);
         g_deleteCount += (toX-fromX+1);
         for (int x = fromX; x <= toX; ++x) {
-          g_packDeleteCount[x][y] = g_deleteId;
+          g_packDeleteChecker[x][y] = g_deleteId;
         }
       }
     }
@@ -657,7 +657,7 @@ public:
       if (sum == DELETED_SUM) {
         g_deleteCount += (toY-fromY+1);
         for (int y = fromY; y <= toY; ++y) {
-          g_packDeleteCount[x][y] = g_deleteId;
+          g_packDeleteChecker[x][y] = g_deleteId;
         }
       }
     }
@@ -712,7 +712,7 @@ public:
         assert(0 <= fromX && toX < WIDTH);
         g_deleteCount += (toX-fromX+1);
         for (int x = fromX; x <= toX; ++x) {
-          g_packDeleteCount[x][fromY+i] = g_deleteId;
+          g_packDeleteChecker[x][fromY+i] = g_deleteId;
           i++;
         }
       }
@@ -766,7 +766,7 @@ public:
         int i = 0;
         g_deleteCount += (fromX-toX+1);
         for (int x = toX; x <= fromX; ++x) {
-          g_packDeleteCount[x][toY-i] = g_deleteId;
+          g_packDeleteChecker[x][toY-i] = g_deleteId;
           i++;
         }
       }
