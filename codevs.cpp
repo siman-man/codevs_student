@@ -21,10 +21,7 @@ const char DELETED_SUM = 10; // 消滅のために作るべき和の値
 const char EMPTY = 0; // 空のグリッド
 const char OJAMA = 11; // お邪魔ブロック
 
-const int NORMAL = 0; // 通常モード探索
-const int CHECK_POWER = 1; // 最大火力を調べる
-
-int BASE_BEAM_WIDTH = 700;
+int BASE_BEAM_WIDTH = 800;
 int BEAM_WIDTH = 8000;
 int SEARCH_DEPTH = 18;
 int g_scoreLimit = 600;
@@ -39,6 +36,9 @@ unsigned long long xor128(){
   return (rw=(rw^(rw>>19))^(rt^(rt>>8)));
 }
 
+/**
+ * パックの構造体
+ */
 struct Pack {
   int t[9];
 
@@ -111,7 +111,6 @@ struct BestAction {
 
 struct Node {
   Result result;
-  bool chain;
   Command command;
   char field[WIDTH][HEIGHT];
 
@@ -268,10 +267,9 @@ public:
    * 一番良い操作を取得する
    *
    * @param [int] turn 今現在のターン
-   * @param [int] mode 探索の種類
    * @return [BestAction] 一番ベストな行動情報
    */
-   BestAction getBestAction(int turn, int mode = NORMAL) {
+   BestAction getBestAction(int turn) {
     Node root;
     memcpy(root.field, g_field, sizeof(g_field));
     BestAction bestAction;
@@ -284,7 +282,7 @@ public:
 
     for (int depth = 0; depth < SEARCH_DEPTH; depth++) {
       priority_queue<Node, vector<Node>, greater<Node> > pque;
-      Pack pack = g_packs[turn + depth];
+      Pack pack = g_packs[turn+depth];
 
       while (!que.empty()) {
         Node node = que.front(); que.pop();
@@ -292,7 +290,7 @@ public:
         updatePutPackLine();
         memcpy(g_tempPutPackLine, g_putPackLine, sizeof(g_putPackLine));
 
-        for (int x = -1; x <= FIELD_WIDTH; ++x) {
+        for (int x = 1; x <= FIELD_WIDTH-2; ++x) {
           for (int rot = 0; rot < 4; rot++) {
 
             if (putPack(x, rot, pack)) {
@@ -304,9 +302,8 @@ public:
                 if (!result.chain) {
                   result.value += evaluate();
                 }
-                if (result.score >= g_scoreLimit || mode == CHECK_POWER) result.value += 100 * result.score;
+                if (result.score >= g_scoreLimit) result.value += 100 * result.score;
                 cand.result = result;
-                cand.chain = result.chain;
                 cand.command = (depth == 0)? Command(x, rot) : node.command;
                 pque.push(cand);
               }
@@ -333,7 +330,7 @@ public:
         if (depth < SEARCH_DEPTH-1) {
           ll hash = node.hashCode();
 
-          if (!checkNodeList[hash] && !node.chain) {
+          if (!checkNodeList[hash] && !node.result.chain) {
             checkNodeList[hash] = true;
             que.push(node);
           } else {
@@ -511,7 +508,6 @@ public:
     memcpy(g_tempField, g_field, sizeof(g_field));
 
     for (int x = 2; x <= 2; x++) {
-    //for (int x = 1; x <= FIELD_WIDTH; x++) {
       int y = g_putPackLine[x];
 
       for (char num = 1; num <= 9; num++) {
@@ -534,8 +530,7 @@ public:
   /**
    * 連鎖処理のシミュレーションを行う
    *
-   * @param [int] 評価値
-   * @param [int] 探索の種別
+   * @param [int] 現在探索している深さ
    * @return [Result] 連鎖処理の結果
    */
   Result simulate(int depth) {
@@ -567,15 +562,11 @@ public:
 
     for (int y = 1; y <= g_maxHeight; ++y) {
       if (g_chainCheckHorizontal[y] == g_checkId) deleteCheckHorizontal(y);
-    }
-    for (int y = 2; y < g_maxHeight; ++y) {
       if (g_chainCheckRightUpV[y] == g_checkId) deleteCheckDiagonalRightUp(y, 1);
       if (g_chainCheckLeftUpV[y] == g_checkId) deleteCheckDiagonalLeftUp(y, FIELD_WIDTH);
     }
     for (int x = 1; x <= FIELD_WIDTH; ++x) {
       if (g_chainCheckVertical[x] == g_checkId) deleteCheckVertical(x);
-    }
-    for (int x = 1; x <= FIELD_WIDTH; ++x) {
       if (g_chainCheckRightUpH[x] == g_checkId) deleteCheckDiagonalRightUp(1, x);
       if (g_chainCheckLeftUpH[x] == g_checkId) deleteCheckDiagonalLeftUp(1, x);
     }
@@ -847,9 +838,6 @@ public:
       }
     }
 
-    if (ojamaCnt >= 50) {
-      g_scoreLimit = 90;
-    }
     if (ojamaCnt >= 25) {
       g_scoreLimit = 120;
     }
@@ -880,7 +868,7 @@ public:
   }
 
   /**
-   * フィールドの最大の高さと最低の高さを更新する
+   * フィールドの最大の高さを更新する
    */
   inline void updateMaxHeight() {
     g_maxHeight = 0;
