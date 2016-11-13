@@ -111,7 +111,6 @@ struct BestAction {
 
 struct Node {
   Result result;
-  bool chain;
   Command command;
   char field[WIDTH][HEIGHT];
 
@@ -305,7 +304,6 @@ public:
                 }
                 if (result.score >= g_scoreLimit) result.value += 100 * result.score;
                 cand.result = result;
-                cand.chain = result.chain;
                 cand.command = (depth == 0)? Command(x, rot) : node.command;
                 pque.push(cand);
               }
@@ -332,7 +330,7 @@ public:
         if (depth < SEARCH_DEPTH-1) {
           ll hash = node.hashCode();
 
-          if (!checkNodeList[hash] && !node.chain) {
+          if (!checkNodeList[hash] && !node.result.chain) {
             checkNodeList[hash] = true;
             que.push(node);
           } else {
