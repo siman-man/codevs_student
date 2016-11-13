@@ -562,15 +562,11 @@ public:
 
     for (int y = 1; y <= g_maxHeight; ++y) {
       if (g_chainCheckHorizontal[y] == g_checkId) deleteCheckHorizontal(y);
-    }
-    for (int y = 2; y < g_maxHeight; ++y) {
       if (g_chainCheckRightUpV[y] == g_checkId) deleteCheckDiagonalRightUp(y, 1);
       if (g_chainCheckLeftUpV[y] == g_checkId) deleteCheckDiagonalLeftUp(y, FIELD_WIDTH);
     }
     for (int x = 1; x <= FIELD_WIDTH; ++x) {
       if (g_chainCheckVertical[x] == g_checkId) deleteCheckVertical(x);
-    }
-    for (int x = 1; x <= FIELD_WIDTH; ++x) {
       if (g_chainCheckRightUpH[x] == g_checkId) deleteCheckDiagonalRightUp(1, x);
       if (g_chainCheckLeftUpH[x] == g_checkId) deleteCheckDiagonalLeftUp(1, x);
     }
