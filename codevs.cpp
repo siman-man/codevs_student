@@ -21,8 +21,6 @@ const char DELETED_SUM = 10; // 消滅のために作るべき和の値
 const char EMPTY = 0; // 空のグリッド
 const char OJAMA = 11; // お邪魔ブロック
 
-const int NORMAL = 0; // 通常モード探索
-const int CHECK_POWER = 1; // 最大火力を調べる
 
 int BASE_BEAM_WIDTH = 700;
 int BEAM_WIDTH = 8000;
@@ -39,6 +37,9 @@ unsigned long long xor128(){
   return (rw=(rw^(rw>>19))^(rt^(rt>>8)));
 }
 
+/**
+ * パックの構造体
+ */
 struct Pack {
   int t[9];
 
@@ -268,10 +269,9 @@ public:
    * 一番良い操作を取得する
    *
    * @param [int] turn 今現在のターン
-   * @param [int] mode 探索の種類
    * @return [BestAction] 一番ベストな行動情報
    */
-   BestAction getBestAction(int turn, int mode = NORMAL) {
+   BestAction getBestAction(int turn) {
     Node root;
     memcpy(root.field, g_field, sizeof(g_field));
     BestAction bestAction;
@@ -304,7 +304,7 @@ public:
                 if (!result.chain) {
                   result.value += evaluate();
                 }
-                if (result.score >= g_scoreLimit || mode == CHECK_POWER) result.value += 100 * result.score;
+                if (result.score >= g_scoreLimit) result.value += 100 * result.score;
                 cand.result = result;
                 cand.chain = result.chain;
                 cand.command = (depth == 0)? Command(x, rot) : node.command;
