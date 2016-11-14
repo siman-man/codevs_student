@@ -85,37 +85,28 @@ struct Command {
   }
 };
 
-struct Result {
-  int value;
-  int score;
-  bool chain;
-
-  Result(int value = 0, int score = 0, bool chain = false) {
-    this->value = value;
-    this->score = score;
-    this->chain = chain;
-  }
-};
-
 struct BestAction {
   Command command;
-  Result result;
+  int score;
   int fireTurn;
 
-  BestAction(Command command = Command(), Result result = Result(), int fireTurn = MAX_TURN) {
+  BestAction(Command command = Command(), int score = 0, int fireTurn = MAX_TURN) {
     this->command = command;
-    this->result = result;
+    this->score = score;
     this->fireTurn = fireTurn;
   }
 };
 
 struct Node {
-  Result result;
+  int value;
+  int score;
+  bool chain;
   Command command;
   char field[WIDTH][HEIGHT];
 
   Node () {
-    this->result = Result();
+    this->value = 0;
+    this->chain = false;
   }
 
   ll hashCode() {
@@ -133,7 +124,7 @@ struct Node {
   }
 
   bool operator >(const Node &n) const {
-    return result.value < n.result.value;
+    return value < n.value;
   }
 };
 
@@ -232,7 +223,7 @@ public:
 
     BestAction action = getMyBestAction(turn);
     Command command = action.command;
-    int MNP = action.result.score;
+    int MNP = action.score;
 
     fprintf(stderr,"%2d: MNP=%d, FT=%d\n", turn, MNP, action.fireTurn);
 
@@ -283,6 +274,7 @@ public:
     for (int depth = 0; depth < SEARCH_DEPTH; depth++) {
       priority_queue<Node, vector<Node>, greater<Node> > pque;
       Pack pack = g_packs[turn+depth];
+      bool update = false;
 
       while (!que.empty()) {
         Node node = que.front(); que.pop();
@@ -294,16 +286,18 @@ public:
           for (int rot = 0; rot < 4; rot++) {
 
             if (putPack(x, rot, pack)) {
-              Result result = simulate(depth);
+              Node cand;
+              cand.score = simulate();
 
               if (g_maxHeight < DANGER_LINE) {
-                Node cand;
+                cand.value = cand.score;
                 memcpy(cand.field, g_field, sizeof(g_field));
-                if (!result.chain) {
-                  result.value += evaluate();
+                cand.chain = (cand.score > 1 || (depth > 0 && cand.score > 0));
+                if (!cand.chain) {
+                  cand.value += evaluate();
+                  update = true;
                 }
-                if (result.score >= g_scoreLimit) result.value += 100 * result.score;
-                cand.result = result;
+                if (cand.score >= g_scoreLimit) cand.value += 100 * cand.score;
                 cand.command = (depth == 0)? Command(x, rot) : node.command;
                 pque.push(cand);
               }
@@ -318,19 +312,19 @@ public:
       for (int j = 0; j < BEAM_WIDTH && !pque.empty(); j++) {
         Node node = pque.top(); pque.pop();
 
-        if (node.result.score >= g_scoreLimit) {
-          return BestAction(node.command, node.result, turn+depth);
+        if (node.score >= g_scoreLimit) {
+          return BestAction(node.command, node.score, turn+depth);
         }
 
-        if (maxValue < node.result.value) {
-          maxValue = node.result.value;
-          bestAction = BestAction(node.command, node.result, turn+depth);
+        if (maxValue < node.score) {
+          maxValue = node.score;
+          bestAction = BestAction(node.command, node.score, turn+depth);
         }
 
         if (depth < SEARCH_DEPTH-1) {
           ll hash = node.hashCode();
 
-          if (!checkNodeList[hash] && !node.result.chain) {
+          if (!checkNodeList[hash] && (!node.chain || (!update && node.score <= 2))) {
             checkNodeList[hash] = true;
             que.push(node);
           } else {
@@ -516,8 +510,8 @@ public:
         setChainCheckId(y, x);
         g_putPackLine[x]= y+1;
 
-        Result result = simulate(0);
-        maxValue = max(maxValue, result.score);
+        int score = simulate();
+        maxValue = max(maxValue, score);
 
         memcpy(g_field, g_tempField, sizeof(g_tempField));
         g_putPackLine[x] = y;
@@ -530,12 +524,10 @@ public:
   /**
    * 連鎖処理のシミュレーションを行う
    *
-   * @param [int] 現在探索している深さ
-   * @return [Result] 連鎖処理の結果
+   * @return [int] スコア
    */
-  Result simulate(int depth) {
+  int simulate() {
     int chainCnt = 0;
-    int value = 0;
     int score = 0;
 
     while (true) {
@@ -547,10 +539,9 @@ public:
 
       chainCnt++;
       score += floor(pow(1.3, chainCnt)) * (g_deleteCount/2);
-      value += floor(pow(1.6, chainCnt)) * (g_deleteCount/2);
     }
 
-    return Result(value, score, (chainCnt >= 2 || (depth > 0 && chainCnt >= 1)));
+    return score;
   }
 
   /**
