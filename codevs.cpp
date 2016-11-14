@@ -21,7 +21,7 @@ const char DELETED_SUM = 10; // 消滅のために作るべき和の値
 const char EMPTY = 0; // 空のグリッド
 const char OJAMA = 11; // お邪魔ブロック
 
-int BASE_BEAM_WIDTH = 800;
+int BASE_BEAM_WIDTH = 400;
 int BEAM_WIDTH = 8000;
 int SEARCH_DEPTH = 18;
 int g_scoreLimit = 600;
@@ -98,12 +98,12 @@ struct Result {
 };
 
 struct BestAction {
-  Command command;
+  vector<Command> commands;
   Result result;
   int fireTurn;
 
-  BestAction(Command command = Command(), Result result = Result(), int fireTurn = MAX_TURN) {
-    this->command = command;
+  BestAction(vector<Command> commands = vector<Command>(), Result result = Result(), int fireTurn = MAX_TURN) {
+    this->commands = commands;
     this->result = result;
     this->fireTurn = fireTurn;
   }
@@ -111,7 +111,7 @@ struct BestAction {
 
 struct Node {
   Result result;
-  Command command;
+  vector<Command> commands;
   char field[WIDTH][HEIGHT];
 
   Node () {
@@ -136,6 +136,10 @@ struct Node {
     return result.value < n.result.value;
   }
 };
+
+vector<Command> g_bestCommands;
+int g_fireTurn;
+int g_fireScore;
 
 class Codevs {
 public:
@@ -171,6 +175,8 @@ public:
 
     g_checkId = 0;
     g_deleteId = 0;
+    g_fireScore = 0;
+    g_fireTurn = MAX_TURN;
 
     for (int x = 0; x < WIDTH; ++x) {
       for (int y = 0; y < HEIGHT; ++y) {
@@ -228,13 +234,26 @@ public:
 
     if (myOjamaStock > 0) {
       fillOjama(turn, myOjamaStock);
+      resetAction();
     }
 
     BestAction action = getMyBestAction(turn);
-    Command command = action.command;
+    Command command = (action.commands.size() > 0)? action.commands[0] : Command(0, 0);
     int MNP = action.result.score;
 
+    if (MNP >= g_scoreLimit && ((g_fireTurn > action.fireTurn) || (g_fireTurn == action.fireTurn && g_fireScore < MNP))) {
+      holdAction(action);
+      command = g_bestCommands[0];
+      g_bestCommands.erase(g_bestCommands.begin());
+    } else if (g_bestCommands.size() > 0) {
+      command = g_bestCommands[0];
+      g_bestCommands.erase(g_bestCommands.begin());
+    } else {
+      resetAction();
+    }
+
     fprintf(stderr,"%2d: MNP=%d, FT=%d\n", turn, MNP, action.fireTurn);
+    fprintf(stderr,"%2d: FS=%d, FT=%d\n", turn, g_fireScore, g_fireTurn);
 
     cout << command.pos-1 << " " << command.rot << endl;
     fflush(stderr);
@@ -242,6 +261,18 @@ public:
     if (myOjamaStock > 0) {
       cleanOjama(turn, myOjamaStock);
     }
+  }
+
+  void holdAction(BestAction action) {
+    g_bestCommands = action.commands;
+    g_fireTurn = action.fireTurn;
+    g_fireScore = action.result.score;
+  }
+
+  void resetAction() {
+    g_bestCommands.clear();
+    g_fireTurn = MAX_TURN;
+    g_fireScore = 0;
   }
 
   /**
@@ -275,14 +306,16 @@ public:
     BestAction bestAction;
     int maxValue = -9999;
 
-    queue<Node> que;
-    que.push(root);
-
     unordered_map<ll, bool> checkNodeList;
+
+    for (int i = 0; i < 2; i++) {
+      queue<Node> que;
+      que.push(root);
 
     for (int depth = 0; depth < SEARCH_DEPTH; depth++) {
       priority_queue<Node, vector<Node>, greater<Node> > pque;
       Pack pack = g_packs[turn+depth];
+      bool update = false;
 
       while (!que.empty()) {
         Node node = que.front(); que.pop();
@@ -301,10 +334,12 @@ public:
                 memcpy(cand.field, g_field, sizeof(g_field));
                 if (!result.chain) {
                   result.value += evaluate();
+                  update = true;
                 }
                 if (result.score >= g_scoreLimit) result.value += 100 * result.score;
                 cand.result = result;
-                cand.command = (depth == 0)? Command(x, rot) : node.command;
+                cand.commands = node.commands;
+                cand.commands.push_back(Command(x, rot));
                 pque.push(cand);
               }
             }
@@ -319,19 +354,19 @@ public:
         Node node = pque.top(); pque.pop();
 
         if (node.result.score >= g_scoreLimit) {
-          return BestAction(node.command, node.result, turn+depth);
+          return BestAction(node.commands, node.result, turn+depth);
         }
 
-        if (maxValue < node.result.value) {
-          maxValue = node.result.value;
-          bestAction = BestAction(node.command, node.result, turn+depth);
+        if (maxValue < node.result.score) {
+          maxValue = node.result.score;
+          bestAction = BestAction(node.commands, node.result, turn+depth);
         }
 
         if (depth < SEARCH_DEPTH-1) {
           ll hash = node.hashCode();
 
-          if (!checkNodeList[hash] && !node.result.chain) {
-            checkNodeList[hash] = true;
+          if (!checkNodeList[hash] && (!node.result.chain || (!update && node.result.score <= 5))) {
+            if (depth > 2) checkNodeList[hash] = true;
             que.push(node);
           } else {
             j--;
@@ -339,6 +374,7 @@ public:
         }
       }
     }
+  }
 
     return bestAction;
   }
@@ -547,8 +583,9 @@ public:
 
       chainCnt++;
       score += floor(pow(1.3, chainCnt)) * (g_deleteCount/2);
-      value += floor(pow(1.6, chainCnt)) * (g_deleteCount/2);
     }
+
+    value += score;
 
     return Result(value, score, (chainCnt >= 2 || (depth > 0 && chainCnt >= 1)));
   }
