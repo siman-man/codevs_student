@@ -765,23 +765,6 @@ public:
   }
 
   /**
-   * 盤面の評価を行う
-   *
-   * @return [int] 盤面の評価値
-   */
-  int evaluateField() {
-    int bonus = 0;
-
-    for (int x = 1; x <= FIELD_WIDTH; ++x) {
-      if (g_putPackLine[x-1] - g_putPackLine[x] >= 4 && g_putPackLine[x+1] - g_putPackLine[x] >= 4) {
-        bonus -= 5;
-      }
-    }
-
-    return bonus;
-  }
-
-  /**
    * ターン毎の情報を読み込む
    */
   void readTurnInfo() {
