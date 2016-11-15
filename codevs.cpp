@@ -85,12 +85,12 @@ struct Command {
   }
 };
 
-struct BestAction {
+struct Action {
   Command command;
   int score;
   int fireTurn;
 
-  BestAction(Command command = Command(), int score = 0, int fireTurn = MAX_TURN) {
+  Action(Command command = Command(), int score = 0, int fireTurn = MAX_TURN) {
     this->command = command;
     this->score = score;
     this->fireTurn = fireTurn;
@@ -221,7 +221,7 @@ public:
       fillOjama(turn, myOjamaStock);
     }
 
-    BestAction action = getMyBestAction(turn);
+    Action action = getMyBestAction(turn);
     Command command = action.command;
     int MNP = action.score;
 
@@ -238,9 +238,9 @@ public:
   /**
    * 自分のベストなコマンドを選択する
    *
-   * @return [BestAction] 一番良いアクション
+   * @return [Action] 一番良いアクション
    */
-  BestAction getMyBestAction(int turn) {
+  Action getMyBestAction(int turn) {
     memcpy(g_field, g_myField, sizeof(g_myField));
 
     if (myRemainTime >= 60000) {
@@ -258,12 +258,12 @@ public:
    * 一番良い操作を取得する
    *
    * @param [int] turn 今現在のターン
-   * @return [BestAction] 一番ベストな行動情報
+   * @return [Action] 一番ベストな行動情報
    */
-   BestAction getBestAction(int turn) {
+   Action getBestAction(int turn) {
     Node root;
     memcpy(root.field, g_field, sizeof(g_field));
-    BestAction bestAction;
+    Action bestAction;
     int maxValue = -9999;
 
     queue<Node> que;
@@ -313,12 +313,12 @@ public:
         Node node = pque.top(); pque.pop();
 
         if (node.score >= g_scoreLimit) {
-          return BestAction(node.command, node.score, turn+depth);
+          return Action(node.command, node.score, turn+depth);
         }
 
         if (maxValue < node.score) {
           maxValue = node.score;
-          bestAction = BestAction(node.command, node.score, turn+depth);
+          bestAction = Action(node.command, node.score, turn+depth);
         }
 
         if (depth < SEARCH_DEPTH-1) {
