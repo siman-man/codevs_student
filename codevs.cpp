@@ -21,10 +21,10 @@ const char DELETED_SUM = 10; // 消滅のために作るべき和の値
 const char EMPTY = 0; // 空のグリッド
 const char OJAMA = 11; // お邪魔ブロック
 
-int BASE_BEAM_WIDTH = 800;
-int BEAM_WIDTH = 8000;
-int SEARCH_DEPTH = 18;
-int g_scoreLimit = 600;
+int BASE_BEAM_WIDTH = 800; // ビーム幅
+int BEAM_WIDTH;
+int SEARCH_DEPTH = 18; // ビームサーチの探索の深さ
+int g_scoreLimit = 600; // 発火する閾値のスコア
 
 /**
  * 乱数生成器
@@ -54,11 +54,9 @@ char g_tempField[WIDTH][HEIGHT];
 
 int g_putPackLine[WIDTH]; // 次にブロックを設置する高さを保持する配列
 int g_tempPutPackLine[WIDTH]; // 一時保存用
+int g_maxHeight; // フィールドの最大の高さ
 
-ll g_packDeleteChecker[WIDTH][HEIGHT];
-
-int g_maxHeight;
-
+ll g_packDeleteChecker[WIDTH][HEIGHT]; // 連鎖で消えるブロックをチェックするやつ
 ll g_zoblishField[WIDTH][HEIGHT][12]; // zoblish hash生成用の乱数テーブル
 
 ll g_chainCheckHorizontal[HEIGHT]; // 連鎖判定フィールド
@@ -68,13 +66,16 @@ ll g_chainCheckRightUpV[HEIGHT]; // 連鎖判定フィールド
 ll g_chainCheckLeftUpV[HEIGHT]; // 連鎖判定フィールド
 ll g_chainCheckLeftUpH[WIDTH]; // 連鎖判定フィールド
 ll g_checkId;
-
 ll g_deleteId;
+
 int g_deleteCount;
 
 Pack g_packs[MAX_TURN]; // パック一覧
 Pack g_ojamaPacks[MAX_TURN]; // お邪魔で埋め尽くされたパック一覧
 
+/**
+ * シミュレータに返すコマンドの構造体
+ */
 struct Command {
   int pos;
   int rot;
